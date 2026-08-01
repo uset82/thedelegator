@@ -1,5 +1,10 @@
 # the delegator
 
+[![npm](https://img.shields.io/npm/v/thedelegator?color=cb3837&logo=npm)](https://www.npmjs.com/package/thedelegator)
+[![ci](https://github.com/uset82/thedelegator/actions/workflows/ci.yml/badge.svg)](https://github.com/uset82/thedelegator/actions/workflows/ci.yml)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![node](https://img.shields.io/node/v/thedelegator)](https://nodejs.org)
+
 **Run Claude, Codex, Cursor and Gemini on the same repository at the same time — without them
 destroying each other's work.**
 
