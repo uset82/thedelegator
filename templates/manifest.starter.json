@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "project": "my-project",
+  "defaultBranch": "main",
+  "worktreeRoot": "..",
+
+  "shared": {
+    "owner": "claude",
+    "reason": "Touched by almost every task. One owner prevents a conflict on every merge.",
+    "paths": ["package.json", "**/package.json", "Dockerfile", ".github/workflows/**", ".gitignore"]
+  },
+
+  "agents": {
+    "claude": {
+      "role": "architect",
+      "title": "Architect and integrator",
+      "strengths": "Planning, architecture, design direction, review, integration",
+      "branch": "feat/architecture",
+      "worktree": "wt-claude",
+      "owns": ["docs/**", "plans/**"],
+      "reviews": true,
+      "merges": true
+    },
+    "codex": {
+      "role": "builder",
+      "title": "Build engine",
+      "strengths": "Greenfield modules, schemas, pipelines, testable acceptance criteria",
+      "branch": "feat/build",
+      "worktree": "wt-codex",
+      "owns": ["src/lib/**", "src/api/**", "scripts/**"]
+    },
+    "grok": {
+      "role": "fixer",
+      "title": "Builds, platform, error triage",
+      "strengths": "Messy toolchains, real builds, measuring output, fixing red branches",
+      "branch": "feat/platform",
+      "worktree": "wt-grok",
+      "owns": ["infra/**", "deploy/**"]
+    },
+    "gemini": {
+      "role": "media",
+      "title": "Media and assets",
+      "strengths": "Images, video, audio, alt text, rights registers",
+      "branch": "chore/media",
+      "worktree": "wt-gemini",
+      "owns": ["public/images/**", "public/videos/**", "public/audio/**"]
+    }
+  },
+
+  "everyoneMayWrite": ["claims/${agent}.md"],
+
+  "checks": {
+    "verify": "npm test",
+    "staleAfterHours": 12
+  }
+}

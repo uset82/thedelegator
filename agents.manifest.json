@@ -1,0 +1,81 @@
+{
+  "$schema": "./schema/manifest.schema.json",
+  "version": 1,
+  "project": "portafolio",
+  "defaultBranch": "main",
+  "worktreeRoot": "..",
+
+  "shared": {
+    "owner": "claude",
+    "reason": "Touched by almost every task. One owner prevents a conflict on every merge.",
+    "paths": [
+      "package.json",
+      "**/package.json",
+      "**/schemas.ts",
+      "**/records.ts",
+      "Dockerfile",
+      "railway.json",
+      ".github/workflows/**",
+      ".gitignore"
+    ]
+  },
+
+  "agents": {
+    "claude": {
+      "role": "architect",
+      "title": "Architect and integrator",
+      "strengths": "Planning, engineering architecture, design direction, review, integration",
+      "branch": "feat/design-system",
+      "worktree": "wt-claude",
+      "owns": ["updates/**", "docs/decisions/**", "docs/design/**", "site/src/styles/**"],
+      "reviews": true,
+      "merges": true
+    },
+    "codex": {
+      "role": "builder",
+      "title": "Build engine",
+      "strengths": "Greenfield modules, schemas, pipelines, testable acceptance criteria",
+      "branch": "feat/brain-pipeline",
+      "worktree": "wt-codex",
+      "owns": [
+        "brain/**",
+        "scripts/brain-*.ts",
+        "scripts/chatgpt-*.ts",
+        "site/src/lib/ai/**",
+        "site/src/content/generated/**",
+        "site/src/app/arcade/**",
+        "site/src/components/arcade/**"
+      ]
+    },
+    "grok": {
+      "role": "fixer",
+      "title": "Builds, platform, error triage",
+      "strengths": "Messy toolchains, real builds, measuring output, fixing red branches",
+      "branch": "feat/arcade",
+      "worktree": "wt-grok",
+      "owns": ["site/public/games/**", "scripts/deploy-*.ts", "scripts/optimize-*.ts"]
+    },
+    "gemini": {
+      "role": "media",
+      "title": "Media and rights",
+      "strengths": "Images, video, music, posters, alt text, rights registers",
+      "branch": "chore/media",
+      "worktree": "wt-gemini",
+      "owns": [
+        "site/public/images/**",
+        "site/public/videos/**",
+        "site/public/audio/**",
+        "docs/assets/**",
+        "docs/content/*-register.json",
+        "docs/content/*-inventory.json"
+      ]
+    }
+  },
+
+  "everyoneMayWrite": ["updates/claims/${agent}.md"],
+
+  "checks": {
+    "verify": "pnpm --dir site verify",
+    "staleAfterHours": 12
+  }
+}

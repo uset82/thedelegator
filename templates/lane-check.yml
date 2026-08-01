@@ -1,0 +1,26 @@
+# Copy to .github/workflows/lane-check.yml
+#
+# Fails any pull request that writes outside its agent's lane.
+# This is what turns the ownership map from a convention into a constraint.
+
+name: lane check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lanes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # delegator needs history to find the merge base
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Branch → agent comes from the manifest, so no per-agent config here.
+      - name: Check lane ownership
+        run: npx --yes thedelegator check --base=origin/${{ github.base_ref }}

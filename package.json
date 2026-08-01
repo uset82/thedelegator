@@ -1,0 +1,33 @@
+{
+  "name": "thedelegator",
+  "version": "0.1.0",
+  "description": "Coordination-free parallelism for multiple AI coding agents. Disjoint lanes, enforced by CI. Status derived from git, never self-reported.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "delegator": "bin/delegator.mjs"
+  },
+  "files": [
+    "bin/",
+    "templates/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node test/lanes.test.mjs"
+  },
+  "keywords": [
+    "ai-agents",
+    "multi-agent",
+    "orchestration",
+    "codeowners",
+    "git-worktree",
+    "claude",
+    "codex",
+    "cursor",
+    "gemini"
+  ]
+}
