@@ -4,6 +4,15 @@
   "description": "Coordination-free parallelism for multiple AI coding agents. Disjoint lanes, enforced by CI. Status derived from git, never self-reported.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uset82/thedelegator.git"
+  },
+  "homepage": "https://github.com/uset82/thedelegator#readme",
+  "bugs": {
+    "url": "https://github.com/uset82/thedelegator/issues"
+  },
+  "author": "Carlos Carpio (https://github.com/uset82)",
   "bin": {
     "delegator": "bin/delegator.mjs"
   },
