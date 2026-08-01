@@ -1,0 +1,80 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: test · node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm test
+
+  package:
+    # Guards the exact bug that shipped in 0.1.0: `files` omitted lib/, so the
+    # published CLI crashed on first run with ERR_MODULE_NOT_FOUND. Reading the
+    # config is not enough — this installs the tarball and runs the binary.
+    name: packaged CLI actually runs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Pack
+        run: echo "TARBALL=$(npm pack --silent)" >> "$GITHUB_ENV"
+
+      - name: Install the tarball into a clean directory
+        run: |
+          mkdir -p /tmp/consumer && cd /tmp/consumer
+          npm init -y >/dev/null
+          npm install "$GITHUB_WORKSPACE/$TARBALL"
+
+      - name: Run it as an outside user would
+        working-directory: /tmp/consumer
+        run: |
+          set -e
+          npx delegator --help > /dev/null
+          npx delegator init > /dev/null
+          # `prompts` exercises lib/ and templates/ together — the paths most
+          # likely to be missing from a published package.
+          npx delegator prompts codex | grep -q "YOU OWN"
+          echo "packaged CLI works"
+
+      - name: Overlapping lanes must be fatal
+        working-directory: /tmp/consumer
+        run: |
+          node -e "
+            const fs=require('fs');
+            const m=JSON.parse(fs.readFileSync('agents.manifest.json','utf8'));
+            m.agents.codex.owns=['docs/**'];
+            m.agents.claude.owns=['docs/**'];
+            fs.writeFileSync('agents.manifest.json',JSON.stringify(m,null,2));
+          "
+          if npx delegator doctor > /dev/null 2>&1; then
+            echo "FAIL: overlapping lanes were accepted"; exit 1
+          fi
+          echo "overlap correctly rejected"
+
+  examples:
+    # A broken starter template means every `delegator init` produces garbage.
+    name: shipped manifests are valid
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate every shipped manifest
+        run: node test/manifests.check.mjs

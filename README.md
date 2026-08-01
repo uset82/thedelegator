@@ -251,15 +251,31 @@ job is how things rot. `check` lists them so you can assign them deliberately.
 
 ---
 
+## Examples
+
+[`examples/portfolio.manifest.json`](examples/portfolio.manifest.json) is the real manifest this
+tool was built for — four agents across a Next.js portfolio, brain pipeline, arcade and media
+lanes. Useful as a shape to copy from.
+
 ## Tests
 
 ```bash
 npm test
 ```
 
-Eleven tests over the lane resolver, including a regression for every incident in the table
-above. The glob matcher had a real bug — `brain/**` did not match `brain/a/b.json` — caught by
-the first test run, which is the argument for writing them.
+Eleven tests over the lane resolver — one regression per incident in the table above — plus a
+validity check on every manifest the package ships.
+
+CI runs three jobs:
+
+| Job | Guards against |
+| --- | --- |
+| `test` on Node 18, 20, 22 | Lane resolution breaking |
+| `packaged CLI actually runs` | Publishing a broken package. It packs the tarball, installs it clean, and runs the binary — because `0.1.0` shipped with `lib/` missing from `files` and the CLI died on first run. Reading the config would not have caught it. |
+| `shipped manifests are valid` | A broken starter template, which would make every `delegator init` produce something that cannot load |
+
+The glob matcher had a real bug — `brain/**` did not match `brain/a/b.json` — caught by the very
+first test run. That is the argument for writing them.
 
 ---
 

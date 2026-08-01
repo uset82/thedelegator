@@ -18,7 +18,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node test/lanes.test.mjs"
+    "test": "node --test test/lanes.test.mjs && node test/manifests.check.mjs"
   },
   "keywords": [
     "ai-agents",
