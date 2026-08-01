@@ -5,6 +5,7 @@ import {
   ownerOf,
   everyoneMayWrite,
   reservedSlotOwner,
+  globsOverlap,
   findViolations,
   assertDisjoint,
 } from "../lib/lanes.mjs";
@@ -102,6 +103,37 @@ test("overlapping lanes are fatal, not a warning", () => {
   const problems = assertDisjoint(overlapping);
   assert.equal(problems.length, 1);
   assert.match(problems[0], /both own "src\/\*\*"/);
+});
+
+test("REGRESSION: nested lanes are an overlap, though the strings differ", () => {
+  // Compared with `===`, these read as disjoint. They are not: `src/lib/x.mjs`
+  // matched both, and the winner was decided by the order the agents happened to
+  // be declared in — a coin flip deciding who owns a file.
+  const nested = { agents: { codex: { owns: ["src/**"] }, grok: { owns: ["src/lib/**"] } } };
+  const problems = assertDisjoint(nested);
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /overlaps/);
+
+  // Declaration order must not change the verdict.
+  const flipped = { agents: { grok: nested.agents.grok, codex: nested.agents.codex } };
+  assert.equal(assertDisjoint(flipped).length, 1);
+});
+
+test("overlap detection does not cry wolf on real sibling lanes", () => {
+  assert.ok(!globsOverlap("src/lib/**", "src/api/**"));
+  assert.ok(!globsOverlap("site/public/images/**", "site/public/games/**"));
+  assert.ok(!globsOverlap("scripts/brain-*.ts", "scripts/deploy-*.ts"));
+  assert.ok(!globsOverlap("docs/content/*-register.json", "docs/content/*-inventory.json"));
+  assert.ok(!globsOverlap("a?c/**", "abcd/**"));
+});
+
+test("overlap detection catches the shapes that actually collide", () => {
+  assert.ok(globsOverlap("src/**", "src/lib/**"));
+  assert.ok(globsOverlap("scripts/**", "scripts/brain-*.ts"));
+  assert.ok(globsOverlap("**/package.json", "site/package.json"));
+  assert.ok(globsOverlap("**/package.json", "package.json"));
+  assert.ok(globsOverlap("a/*/c", "a/b/**"));
+  assert.ok(globsOverlap("a?c/**", "abc/**"));
 });
 
 test("REGRESSION: one agent could overwrite another's claim slot and CI stayed green", () => {
