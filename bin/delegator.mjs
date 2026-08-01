@@ -15,7 +15,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ownerOf, everyoneMayWrite, findViolations, assertDisjoint } from "../lib/lanes.mjs";
+import { findViolations, assertDisjoint } from "../lib/lanes.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MANIFEST = "agents.manifest.json";
@@ -56,10 +56,9 @@ function findRepoRoot(start = process.cwd()) {
 
 function loadManifest() {
   const root = findRepoRoot();
+  // Deduped: cwd and the repo root are the same place more often than not.
   const candidates = [
-    join(process.cwd(), MANIFEST),
-    join(root, MANIFEST),
-    join(root, "thedelegator", MANIFEST),
+    ...new Set([join(process.cwd(), MANIFEST), join(root, MANIFEST), join(root, "thedelegator", MANIFEST)]),
   ];
   const found = candidates.find(existsSync);
   if (!found) {
@@ -137,7 +136,11 @@ function cmdCheck(argv) {
 
   console.log(C.red(`  ✗ ${violations.length} file(s) outside ${agent}'s lane:\n`));
   for (const v of violations) {
-    const why = v.shared ? `SHARED, owned by ${v.agent}` : `owned by ${v.agent}`;
+    const why = v.reserved
+      ? `${v.agent}'s claim slot — you may only write your own`
+      : v.shared
+        ? `SHARED, owned by ${v.agent}`
+        : `owned by ${v.agent}`;
     console.log(`    ${C.red("✗")} ${v.path}`);
     console.log(`      ${C.dim(why)}`);
   }
@@ -183,17 +186,17 @@ function cmdStatus() {
       ahead > 0
         ? git(["diff", "--name-only", `origin/${m.defaultBranch}...${ref}`], root).split("\n").filter(Boolean)
         : [];
-    const strays = files.filter(
-      (f) => !everyoneMayWrite(f, name, m) && ownerOf(f, m) && ownerOf(f, m).agent !== name,
-    );
+    // Same rule the CI gate applies, so status and check can never disagree.
+    const strays = findViolations(files, name, m).violations.map((v) => v.path);
 
     if (ahead === 0) {
       stuck.push(`${name} — 0 commits ahead, last activity ${rel || "unknown"}. Idle or never started.`);
     } else if (pr && pr.isDraft) {
       stuck.push(`${name} — PR #${pr.number} is a DRAFT and will not merge. Mark it ready.`);
     } else if (!pr) {
-      const how = ageMs > staleMs ? "STALE" : "unpushed";
-      stuck.push(`${name} — ${ahead} commit(s), no open PR (${how}, ${rel}). Not delivered.`);
+      // The branch resolved on origin above, so what is missing is the PR, not the push.
+      const stale = ageMs > staleMs ? "STALE, " : "";
+      stuck.push(`${name} — ${ahead} commit(s) on origin, no open PR (${stale}${rel}). Not delivered.`);
     } else {
       moved.push(`${name} — PR #${pr.number} "${pr.title}" · ${ahead} commit(s) · ${rel}`);
     }

@@ -1,6 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { globToRegExp, ownerOf, everyoneMayWrite, findViolations, assertDisjoint } from "../lib/lanes.mjs";
+import {
+  globToRegExp,
+  ownerOf,
+  everyoneMayWrite,
+  reservedSlotOwner,
+  findViolations,
+  assertDisjoint,
+} from "../lib/lanes.mjs";
 
 /** The real manifest shape, trimmed. Cases below are drawn from actual incidents. */
 const m = {
@@ -95,6 +102,37 @@ test("overlapping lanes are fatal, not a warning", () => {
   const problems = assertDisjoint(overlapping);
   assert.equal(problems.length, 1);
   assert.match(problems[0], /both own "src\/\*\*"/);
+});
+
+test("REGRESSION: one agent could overwrite another's claim slot and CI stayed green", () => {
+  // Nothing owns `updates/claims/**`, so this resolved to "unclaimed" — a warning
+  // the gate does not fail on. codex could rewrite gemini's claim file at will.
+  const { violations, unclaimed } = findViolations(["updates/claims/gemini.md"], "codex", m);
+  assert.deepEqual(unclaimed, []);
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].agent, "gemini");
+  assert.equal(violations[0].reserved, true);
+});
+
+test("a claim slot outranks a lane that covers its directory", () => {
+  // claude owns `updates/**`, but grok's claim file is still grok's alone.
+  const { violations } = findViolations(["updates/claims/grok.md"], "claude", m);
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].agent, "grok");
+  assert.equal(violations[0].reserved, true);
+});
+
+test("an agent's own claim slot stays writable", () => {
+  const { violations, unclaimed } = findViolations(["updates/claims/grok.md"], "grok", m);
+  assert.equal(violations.length, 0);
+  assert.deepEqual(unclaimed, []);
+});
+
+test("everyoneMayWrite entries without ${agent} belong to nobody in particular", () => {
+  const free = { agents: { a: { owns: [] }, b: { owns: [] } }, everyoneMayWrite: ["CHANGELOG.md"] };
+  assert.equal(reservedSlotOwner("CHANGELOG.md", free), null);
+  assert.equal(findViolations(["CHANGELOG.md"], "a", free).violations.length, 0);
+  assert.equal(findViolations(["CHANGELOG.md"], "b", free).violations.length, 0);
 });
 
 test("unclaimed paths are reported separately from violations", () => {
