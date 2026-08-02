@@ -5,7 +5,11 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] — 2026-08-02
+
+Ships everything in 0.2.0 as well — see below — because 0.2.0 was tagged in the
+repository but never reached npm. Anyone still on 0.1.0 is getting a lane gate
+with four holes in it, and should upgrade straight to this.
 
 ### Added
 
@@ -28,6 +32,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   example.
 
 ## [0.2.0] — 2026-08-01
+
+**Never published to npm.** It landed on `main`, an expired auth token stopped
+the release, and its contents went out in 0.3.0 instead. Kept here because the
+commits are real history; do not go looking for it on the registry.
 
 Four defects in the lane gate itself. Every one of them let a branch through
 that should have been stopped, which is the only failure mode that matters in a
@@ -89,5 +97,6 @@ Anyone on 0.1.0 should upgrade: that version reports overlapping lanes as
 Initial release. `init`, `doctor`, `check`, `status` and `prompts`, disjoint
 lanes enforced in CI, and status derived from git rather than self-reported.
 
+[0.3.0]: https://github.com/uset82/thedelegator/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/uset82/thedelegator/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/uset82/thedelegator/releases/tag/v0.1.0
