@@ -28,7 +28,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test test/lanes.test.mjs test/tools.test.mjs && node test/manifests.check.mjs",
+    "test": "node --test test/lanes.test.mjs test/tools.test.mjs test/lane-check-template.test.mjs && node test/manifests.check.mjs",
     "prepublishOnly": "npm test"
   },
   "keywords": [
