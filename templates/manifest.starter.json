@@ -12,6 +12,7 @@
 
   "agents": {
     "claude": {
+      "tool": "claude",
       "role": "architect",
       "title": "Architect and integrator",
       "strengths": "Planning, architecture, design direction, review, integration",
@@ -22,6 +23,7 @@
       "merges": true
     },
     "codex": {
+      "tool": "codex",
       "role": "builder",
       "title": "Build engine",
       "strengths": "Greenfield modules, schemas, pipelines, testable acceptance criteria",
@@ -30,6 +32,7 @@
       "owns": ["src/lib/**", "src/api/**", "scripts/**"]
     },
     "grok": {
+      "tool": "grok",
       "role": "fixer",
       "title": "Builds, platform, error triage",
       "strengths": "Messy toolchains, real builds, measuring output, fixing red branches",
@@ -38,6 +41,7 @@
       "owns": ["infra/**", "deploy/**"]
     },
     "gemini": {
+      "tool": "gemini",
       "role": "media",
       "title": "Media and assets",
       "strengths": "Images, video, audio, alt text, rights registers",

@@ -130,6 +130,11 @@ git
   ✓ origin/main exists
 gh
   ✓ authenticated
+agents
+  ✓ claude: 2.1.220 (Claude Code)
+  ✓ codex: codex-cli 0.142.0
+  ✓ grok: grok 0.2.118
+  ✗ gemini: `gemini` is not on PATH
 worktrees
   ✗ gemini: 19 commit(s) behind main — needs a rebase
 ```
@@ -137,6 +142,12 @@ worktrees
 On this project's first launch, all four agents had no plan files in their worktrees and no
 installed dependencies. Every one would have failed on its first command and nothing would have
 said why. `doctor` exists because of that morning.
+
+The `agents` section runs each agent's own command and reports what came back, so a lane assigned
+to a tool that is not installed is caught before you launch rather than after. Declare it per agent
+— `"tool": "codex"`, or `"tool": { "cmd": "cursor", "args": ["--version"] }` when the command needs
+arguments. Nothing here is hardcoded to a vendor: any agent works as soon as the manifest names its
+command. Agents with no `tool` are skipped, so existing manifests keep working unchanged.
 
 **4. Enforce the lanes in CI:**
 
@@ -168,7 +179,7 @@ the rule CI enforces cannot disagree.
 
 | Command | What it does | Exit code |
 | --- | --- | --- |
-| `doctor` | Worktrees present, current, dependencies installed, `gh` authenticated | `1` if anything is broken |
+| `doctor` | Each agent's command responds, worktrees present and current, `gh` authenticated | `1` if anything is broken |
 | `check` | Compares changed files against the branch's lane | `1` on a violation — fails the PR |
 | `status` | Per-agent state derived from git and the PR list | `0` |
 | `prompts` | Renders each agent's prompt from the manifest | `0` |

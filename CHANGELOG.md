@@ -5,6 +5,28 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`doctor` now checks the agents themselves.** It verified git, worktrees and
+  lanes, then printed "Ready. Every agent can work." without ever establishing
+  that the agents existed. A manifest can hand gemini a lane on a machine with
+  no gemini installed, and nothing said so — the same false green the lane
+  checks used to give.
+
+  Declare a command per agent, as `"tool": "codex"` or
+  `"tool": { "cmd": "cursor", "args": ["--version"] }`. `doctor` resolves it on
+  PATH, runs it, and reports what came back. Two failure modes are distinguished:
+  not installed at all, versus installed but not answering.
+
+  Nothing is hardcoded to a vendor — the manifest names the command, so an agent
+  this code has never heard of works without a change here. Agents with no
+  `tool` are skipped, so existing manifests are unaffected.
+
+- `tool` declared for all four agents in the starter template and the portfolio
+  example.
+
 ## [0.2.0] — 2026-08-01
 
 Four defects in the lane gate itself. Every one of them let a branch through

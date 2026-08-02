@@ -16,6 +16,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { findViolations, assertDisjoint } from "../lib/lanes.mjs";
+import { probeAgents } from "../lib/tools.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MANIFEST = "agents.manifest.json";
@@ -258,6 +259,18 @@ function cmdDoctor() {
     const behind = Number(git(["rev-list", "--count", `HEAD..origin/${m.defaultBranch}`], path) || 0);
     if (behind > 0) bad(`${name}: ${behind} commit(s) behind ${m.defaultBranch} — needs a rebase`);
     else ok(`${name}: ${a.worktree} present and current`);
+  }
+
+  console.log(`\n${C.bold("agents")}`);
+  const probes = probeAgents(m);
+  if (!probes.length) {
+    console.log(
+      C.dim(`  no agent declares a "tool" — add one to check the agent can actually run`),
+    );
+  }
+  for (const p of probes) {
+    if (p.status === "ok") ok(`${p.name}: ${p.detail}`);
+    else bad(`${p.name}: ${p.detail}`);
   }
 
   console.log(`\n${C.bold("lanes")}`);

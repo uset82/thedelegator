@@ -22,6 +22,7 @@
 
   "agents": {
     "claude": {
+      "tool": "claude",
       "role": "architect",
       "title": "Architect and integrator",
       "strengths": "Planning, engineering architecture, design direction, review, integration",
@@ -32,6 +33,7 @@
       "merges": true
     },
     "codex": {
+      "tool": "codex",
       "role": "builder",
       "title": "Build engine",
       "strengths": "Greenfield modules, schemas, pipelines, testable acceptance criteria",
@@ -48,6 +50,7 @@
       ]
     },
     "grok": {
+      "tool": "grok",
       "role": "fixer",
       "title": "Builds, platform, error triage",
       "strengths": "Messy toolchains, real builds, measuring output, fixing red branches",
@@ -56,6 +59,7 @@
       "owns": ["site/public/games/**", "scripts/deploy-*.ts", "scripts/optimize-*.ts"]
     },
     "gemini": {
+      "tool": "gemini",
       "role": "media",
       "title": "Media and rights",
       "strengths": "Images, video, music, posters, alt text, rights registers",
