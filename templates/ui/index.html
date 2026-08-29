@@ -420,17 +420,41 @@
     }
 
     .msg-from {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
       font-size: 11px;
       letter-spacing: 0.09em;
       text-transform: uppercase;
-      color: #9ca3af;
       margin-bottom: 8px;
     }
 
-    .msg-role {
+    .msg-icon {
+      color: var(--accent, #6b7280);
+      font-size: 13px;
+      letter-spacing: 0;
+    }
+
+    .msg-name {
+      color: var(--accent, #9ca3af);
+      font-weight: 600;
+    }
+
+    .msg-role,
+    .msg-time {
       color: #6b7280;
       text-transform: none;
       letter-spacing: 0;
+    }
+
+    .msg-time {
+      margin-left: auto;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* One agent, one colour, all the way down the log. */
+    .chat-bubble.agent-msg {
+      border-left: 2px solid var(--accent, transparent);
     }
 
     .chat-bubble ul {
@@ -1775,16 +1799,40 @@ Ready. Waiting for first IDE / Agent to connect.
         bubble.className = "chat-bubble agent-msg";
       }
 
-      // Who is speaking. Without this every agent is an identical grey bubble
-      // and the only cue is a "[NAME]" prefix the sender had to type by hand.
-      const from = msg.sender && !sender.includes("human")
-        ? '<div class="msg-from">' + String(msg.sender).toUpperCase() +
-          (msg.role ? ' <span class="msg-role">' + msg.role + '</span>' : '') + '</div>'
-        : '';
+      // Who is speaking. The manifest already gives every agent a colour and an
+      // icon; the console was loading them for the sidebar and throwing them
+      // away here, so three different agents arrived as one identical grey
+      // bubble and the only cue was a "[NAME]" prefix typed by hand.
+      const meta = (typeof registeredAgentsMap === "object" && registeredAgentsMap)
+        ? registeredAgentsMap[msg.sender] : null;
+      const accent = ACCENTS[(meta && meta.color) || ""] || "#6b7280";
+      if (meta) bubble.style.setProperty("--accent", accent);
+
+      const time = msg.timestamp
+        ? new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : "";
+
+      let from = "";
+      if (msg.sender && !sender.includes("human")) {
+        from =
+          '<div class="msg-from">' +
+          '<span class="msg-icon">' + ((meta && meta.icon) || "•") + '</span>' +
+          '<span class="msg-name">' + String(msg.sender).toUpperCase() + '</span>' +
+          (msg.role ? '<span class="msg-role">' + msg.role + '</span>' : '') +
+          (time ? '<span class="msg-time">' + time + '</span>' : '') +
+          '</div>';
+      }
       bubble.innerHTML = from + formatContent(msg.content);
       chatMessages.appendChild(bubble);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
+
+    // Manifest colour names -> the console palette.
+    const ACCENTS = {
+      orange: "#fb923c", cyan: "#22d3ee", violet: "#a78bfa", purple: "#c084fc",
+      blue: "#60a5fa", green: "#4ade80", red: "#f87171", yellow: "#facc15",
+      pink: "#f472b6", gray: "#9ca3af",
+    };
 
     function formatContent(text) {
       if (!text) return "";
