@@ -471,6 +471,12 @@
       height: 8px;
     }
 
+    .chat-empty {
+      color: #6b7280;
+      font-size: 13px;
+      padding: 18px 4px;
+    }
+
     .chat-bubble {
       background: var(--bg-bubble);
       border-radius: 18px;
@@ -1908,12 +1914,41 @@ Ready. Waiting for first IDE / Agent to connect.
       if (e.key === "Enter") sendMessage();
     });
 
+    /**
+     * Which channel a message belongs to.
+     *
+     * The War Room is the whole log. An agent's channel is what that agent
+     * said, plus what was addressed to it. Without this every channel rendered
+     * the same global feed, so the sidebar looked like it switched
+     * conversations and switched nothing.
+     */
+    function belongsToCurrentChannel(msg) {
+      if (currentAgent === "warroom") return true;
+      const me = String(currentAgent || "").toLowerCase();
+      const from = String(msg.sender || "").toLowerCase();
+      const to = String(msg.receiver || "").toLowerCase();
+      return from === me || to === me;
+    }
+
     async function fetchChatHistory() {
       chatMessages.innerHTML = "";
       try {
         const res = await fetch("/api/history");
         const msgs = await res.json();
-        msgs.forEach(appendBubble);
+        const shown = msgs.filter(belongsToCurrentChannel);
+
+        if (!shown.length) {
+          const empty = document.createElement("div");
+          empty.className = "chat-empty";
+          empty.textContent =
+            currentAgent === "warroom"
+              ? "No messages yet."
+              : "Nothing addressed to this agent yet. Broadcasts live in the War Room.";
+          chatMessages.appendChild(empty);
+          return;
+        }
+
+        shown.forEach(appendBubble);
       } catch (err) {
         console.error("Error fetching history:", err);
       }
