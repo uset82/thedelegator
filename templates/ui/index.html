@@ -225,6 +225,8 @@
     .squircle-white  { background: #e4e4e7; color: #000; }
     .squircle-warroom{ background: linear-gradient(135deg, #ea580c, #2563eb); color: #fff; }
     .squircle-antigravity { background: #0f1015 !important; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 10px rgba(56, 189, 248, 0.25); }
+    .squircle-claude { background: #1c1310 !important; border: 1px solid rgba(217, 119, 87, 0.35) !important; box-shadow: 0 0 10px rgba(217, 119, 87, 0.25); }
+    .squircle-cursor { background: #0b1528 !important; border: 1px solid rgba(56, 189, 248, 0.35) !important; box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
 
     .agent-info {
       flex: 1;
@@ -1532,6 +1534,33 @@ Ready. Waiting for first IDE / Agent to connect.
 </svg>
 `;
 
+    const CLAUDE_ICON_SVG = (size = 22) => `
+<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:${size}px; height:${size}px; display:block;">
+  <g fill="#D97757">
+    <rect x="14.5" y="2.5" width="3" height="8.5" rx="1.5" />
+    <rect x="14.5" y="21" width="3" height="8.5" rx="1.5" />
+    <rect x="2.5" y="14.5" width="8.5" height="3" rx="1.5" />
+    <rect x="21" y="14.5" width="8.5" height="3" rx="1.5" />
+    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(30 16 16)" />
+    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(60 16 16)" />
+    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(120 16 16)" />
+    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(150 16 16)" />
+    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(210 16 16)" />
+    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(240 16 16)" />
+    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(300 16 16)" />
+    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(330 16 16)" />
+    <circle cx="16" cy="16" r="4.2" />
+  </g>
+</svg>
+`;
+
+    const CURSOR_ICON_SVG = (size = 22) => `
+<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:${size}px; height:${size}px; display:block;">
+  <path d="M16 4.5L26 10.2V21.8L16 27.5L6 21.8V10.2L16 4.5Z" stroke="#38bdf8" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M16 16L26 10.2M16 16V27.5M16 16L6 10.2" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+</svg>
+`;
+
     async function loadAgents() {
       try {
         const res = await fetch("/api/agents");
@@ -1594,13 +1623,14 @@ Ready. Waiting for first IDE / Agent to connect.
             colorClass = "squircle-antigravity";
             iconHtml = ANTIGRAVITY_ICON_SVG(22);
           } else if (name.includes("claude")) {
-            iconHtml = "👑";
+            colorClass = "squircle-claude";
+            iconHtml = CLAUDE_ICON_SVG(22);
           } else if (name.includes("codex")) {
             colorClass = "squircle-green";
             iconHtml = "⚡";
           } else if (name.includes("cursor")) {
-            colorClass = "squircle-blue";
-            iconHtml = "💻";
+            colorClass = "squircle-cursor";
+            iconHtml = CURSOR_ICON_SVG(22);
           }
 
           row.innerHTML = `
@@ -1647,8 +1677,18 @@ Ready. Waiting for first IDE / Agent to connect.
         activeIcon.className = "active-icon squircle-antigravity";
         document.getElementById("settings-avatar-icon").innerHTML = ANTIGRAVITY_ICON_SVG(38);
         document.getElementById("settings-avatar-icon").className = "settings-avatar squircle-antigravity";
+      } else if (name.includes("claude")) {
+        activeIcon.innerHTML = CLAUDE_ICON_SVG(18);
+        activeIcon.className = "active-icon squircle-claude";
+        document.getElementById("settings-avatar-icon").innerHTML = CLAUDE_ICON_SVG(38);
+        document.getElementById("settings-avatar-icon").className = "settings-avatar squircle-claude";
+      } else if (name.includes("cursor")) {
+        activeIcon.innerHTML = CURSOR_ICON_SVG(18);
+        activeIcon.className = "active-icon squircle-cursor";
+        document.getElementById("settings-avatar-icon").innerHTML = CURSOR_ICON_SVG(38);
+        document.getElementById("settings-avatar-icon").className = "settings-avatar squircle-cursor";
       } else {
-        activeIcon.innerHTML = agent.icon || (name === "warroom" ? "🏛️" : (name.includes("claude") ? "👑" : "💻"));
+        activeIcon.innerHTML = agent.icon || (name === "warroom" ? "🏛️" : "💻");
         activeIcon.className = `active-icon squircle-${agent.color || (name === "warroom" ? "warroom" : "orange")}`;
         document.getElementById("settings-avatar-icon").innerHTML = activeIcon.innerHTML;
         document.getElementById("settings-avatar-icon").className = `settings-avatar squircle-${agent.color || (name === "warroom" ? "warroom" : "blue")}`;
