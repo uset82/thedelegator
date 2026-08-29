@@ -1517,54 +1517,15 @@ Ready. Waiting for first IDE / Agent to connect.
     }
 
     const ANTIGRAVITY_ICON_SVG = (size = 22) => `
-<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:${size}px; height:${size}px; display:block;">
-  <defs>
-    <linearGradient id="agyGrad_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff4438"/>
-      <stop offset="25%" stop-color="#ff9900"/>
-      <stop offset="50%" stop-color="#10b981"/>
-      <stop offset="75%" stop-color="#06b6d4"/>
-      <stop offset="100%" stop-color="#3b82f6"/>
-    </linearGradient>
-    <filter id="agyGlow_${size}" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="0" stdDeviation="1.2" flood-color="#38bdf8" flood-opacity="0.6"/>
-    </filter>
-  </defs>
-  <path d="M 6 25.5 C 7.5 17, 11 6.5, 16 6.5 C 21 6.5, 24.5 17, 26 25.5 C 22.8 23.2, 19.5 13, 16 13 C 12.5 13, 9.2 23.2, 6 25.5 Z" fill="url(#agyGrad_${size})" filter="url(#agyGlow_${size})" />
-</svg>
+<img src="/antigravity.png" style="width:${size}px; height:${size}px; object-fit:contain; display:block;" onerror="this.style.display='none'" />
 `;
 
     const CLAUDE_ICON_SVG = (size = 22) => `
-<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:${size}px; height:${size}px; display:block;">
-  <g fill="#D97757">
-    <rect x="14.5" y="2.5" width="3" height="8.5" rx="1.5" />
-    <rect x="14.5" y="21" width="3" height="8.5" rx="1.5" />
-    <rect x="2.5" y="14.5" width="8.5" height="3" rx="1.5" />
-    <rect x="21" y="14.5" width="8.5" height="3" rx="1.5" />
-    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(30 16 16)" />
-    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(60 16 16)" />
-    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(120 16 16)" />
-    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(150 16 16)" />
-    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(210 16 16)" />
-    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(240 16 16)" />
-    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(300 16 16)" />
-    <rect x="14.5" y="4" width="3" height="8" rx="1.5" transform="rotate(330 16 16)" />
-    <circle cx="16" cy="16" r="4.2" />
-  </g>
-</svg>
+<img src="/claude.png" style="width:${size}px; height:${size}px; object-fit:contain; display:block;" onerror="this.style.display='none'" />
 `;
 
     const CURSOR_ICON_SVG = (size = 22) => `
-<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:${size}px; height:${size}px; display:block;">
-  <!-- Dark 3D Isometric Cube Container -->
-  <path d="M16 4.5 L26.5 10.5 V22.5 L16 28.5 L5.5 22.5 V10.5 Z" fill="#18181b" />
-  <path d="M16 4.5 L26.5 10.5 L16 16.5 L5.5 10.5 Z" fill="#3f3f46" />
-  <path d="M5.5 10.5 L16 16.5 V28.5 L5.5 22.5 Z" fill="#27272a" />
-  <path d="M16 16.5 L26.5 10.5 V22.5 L16 28.5 Z" fill="#18181b" />
-  <!-- Folded Origami Arrow Cursor -->
-  <path d="M9 11.5 L23 11.5 L16 25 Z" fill="#f4f4f5" />
-  <path d="M16 11.5 L23 11.5 L16 25 Z" fill="#8e8e93" />
-</svg>
+<img src="/cursor.png" style="width:${size}px; height:${size}px; object-fit:contain; display:block; border-radius:4px;" onerror="this.style.display='none'" />
 `;
 
     async function loadAgents() {
