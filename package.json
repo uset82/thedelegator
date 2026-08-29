@@ -28,7 +28,10 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test test/lanes.test.mjs test/tools.test.mjs test/lane-check-template.test.mjs && node test/manifests.check.mjs",
+    "test": "node --test test/*.test.mjs && node test/manifests.check.mjs",
+    "chat": "node bin/delegator.mjs chat",
+    "start": "node bin/delegator.mjs chat",
+    "loop": "node bin/delegator.mjs loop",
     "prepublishOnly": "npm test"
   },
   "keywords": [

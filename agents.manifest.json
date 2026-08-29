@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "project": "thedelegator",
+  "defaultBranch": "main",
+  "worktreeRoot": "..",
+  "shared": {
+    "owner": "architect",
+    "reason": "Touched by almost every task. One owner prevents a conflict on every merge.",
+    "paths": [
+      "package.json",
+      "**/package.json",
+      "Dockerfile",
+      ".github/workflows/**",
+      ".gitignore"
+    ]
+  },
+  "agents": {
+    "cursor": {
+      "role": "builder",
+      "branch": "feat/cursor",
+      "owns": [
+        "src/cursor/**"
+      ],
+      "title": "cursor Agent",
+      "color": "blue",
+      "icon": "💻"
+    }
+  },
+  "everyoneMayWrite": [
+    "claims/${agent}.md"
+  ],
+  "checks": {
+    "verify": "npm test",
+    "staleAfterHours": 12
+  }
+}

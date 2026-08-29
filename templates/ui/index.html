@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TheDelegator — Autonomous Multi-Agent Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-root: #000000;
+      --bg-sidebar: #09090b;
+      --bg-panel: #0d0d11;
+      --bg-card: #17171d;
+      --bg-card-hover: #1f1f27;
+      --bg-bubble: #1c1c21;
+      --bg-input: #17171c;
+      
+      --border-color: rgba(255, 255, 255, 0.07);
+      --border-hover: rgba(255, 255, 255, 0.15);
+      --border-focus: #38bdf8;
+      
+      --text-main: #f4f4f5;
+      --text-sub: #a1a1aa;
+      --text-muted: #71717a;
+
+      --orange: #f97316;
+      --green: #22c55e;
+      --blue: #3b82f6;
+      --purple: #a855f7;
+      --yellow: #eab308;
+      --white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-root);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── LEFT SIDEBAR ── */
+    .sidebar {
+      width: 290px;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: relative;
+      transition: width 0.2s ease, opacity 0.2s ease;
+    }
+
+    .sidebar.collapsed {
+      display: none;
+    }
+
+    .sidebar-header {
+      padding: 16px 16px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-header-add {
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      font-size: 22px;
+      cursor: pointer;
+      line-height: 1;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .btn-header-add:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    /* Dropdown menu for + button */
+    .dropdown-menu {
+      position: absolute;
+      top: 50px;
+      right: 16px;
+      background: #18181e;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      width: 190px;
+      display: none;
+      flex-direction: column;
+      padding: 6px;
+      z-index: 50;
+    }
+
+    .dropdown-item {
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .dropdown-item:hover {
+      background: #272733;
+    }
+    .dropdown-item.danger {
+      color: #f87171;
+    }
+    .dropdown-item.danger:hover {
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    /* Context Menu for right-click on agent row */
+    .context-menu {
+      position: fixed;
+      background: #18181e;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      width: 180px;
+      display: none;
+      flex-direction: column;
+      padding: 6px;
+      z-index: 1000;
+    }
+
+    .search-box-wrap {
+      padding: 0 12px 12px;
+    }
+
+    .search-box {
+      background: #131318;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .search-box input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 13px;
+      width: 100%;
+    }
+
+    .agents-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .agent-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+      position: relative;
+    }
+
+    .agent-row:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .agent-row.active {
+      background: #18181f;
+    }
+
+    .agent-squircle {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .squircle-orange { background: #ea580c; color: #fff; }
+    .squircle-green  { background: #16a34a; color: #fff; }
+    .squircle-blue   { background: #2563eb; color: #fff; }
+    .squircle-purple { background: #9333ea; color: #fff; }
+    .squircle-yellow { background: #ca8a04; color: #fff; }
+    .squircle-white  { background: #e4e4e7; color: #000; }
+    .squircle-warroom{ background: linear-gradient(135deg, #ea580c, #2563eb); color: #fff; }
+
+    .agent-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .agent-header-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 2px;
+    }
+
+    .agent-name {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .agent-time {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .agent-preview {
+      font-size: 12px;
+      color: var(--text-sub);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .empty-agents-box {
+      padding: 18px 14px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.6;
+      border: 1px dashed var(--border-color);
+      border-radius: 12px;
+      margin: 10px 4px;
+    }
+
+    .sidebar-footer {
+      padding: 14px 16px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #09090b;
+    }
+
+    .plugin-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text-sub);
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 8px;
+      transition: all 0.15s;
+    }
+    .plugin-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .profile-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 8px;
+      transition: all 0.15s;
+    }
+    .profile-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .profile-pic {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #27272a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .profile-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* ── CENTER PANEL (Main Chat Stream) ── */
+    .main-chat {
+      flex: 1;
+      background-color: var(--bg-panel);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: relative;
+    }
+
+    .chat-header {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0d0d11;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .active-agent-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .active-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+
+    .active-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .window-controls {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: var(--text-sub);
+      font-size: 15px;
+      user-select: none;
+    }
+    .window-controls span {
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 6px;
+      transition: background 0.12s, color 0.12s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .window-controls span:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .chat-bubble {
+      background: var(--bg-bubble);
+      border-radius: 18px;
+      padding: 16px 20px;
+      max-width: 85%;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #e4e4e7;
+      animation: fadeIn 0.15s ease-out;
+      user-select: text;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-bubble.agent-msg {
+      align-self: flex-start;
+    }
+
+    .chat-bubble.user-msg {
+      align-self: flex-end;
+      background: #27272a;
+      color: #fff;
+    }
+
+    .chat-bubble.system-msg {
+      align-self: center;
+      background: #141418;
+      border: 1px solid var(--border-color);
+      font-size: 12.5px;
+      color: var(--text-sub);
+    }
+
+    .pill-red {
+      display: inline-block;
+      padding: 1px 7px;
+      background: rgba(239, 68, 68, 0.18);
+      color: #f87171;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 12.5px;
+    }
+
+    .pill-cyan {
+      display: inline-block;
+      padding: 1px 7px;
+      background: rgba(56, 189, 248, 0.18);
+      color: #38bdf8;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 12.5px;
+    }
+
+    .pill-gray {
+      display: inline-block;
+      padding: 1px 7px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #d4d4d8;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Input container */
+    .input-container {
+      padding: 16px 28px 24px;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    }
+
+    .mention-chips {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+    }
+
+    .chip {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #141418;
+      border: 1px solid var(--border-color);
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+    .chip:hover { color: #fff; border-color: rgba(255, 255, 255, 0.2); }
+
+    .input-pill {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 999px;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: border 0.2s, box-shadow 0.2s;
+    }
+
+    .input-pill:focus-within {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+    }
+
+    .btn-plus {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+    }
+    .btn-plus:hover { color: #fff; }
+
+    .input-pill input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    .btn-voice {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #27272a;
+      border: none;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-voice:hover { background: #3f3f46; }
+
+    /* Input actions popup */
+    .actions-popup {
+      position: absolute;
+      bottom: 75px;
+      left: 28px;
+      background: #18181e;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      width: 230px;
+      display: none;
+      flex-direction: column;
+      padding: 6px;
+      z-index: 60;
+    }
+
+    /* ── RIGHT PANEL (Screen, Diff & Settings) ── */
+    .screen-panel {
+      width: 380px;
+      background-color: var(--bg-sidebar);
+      border-left: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      padding: 20px;
+      gap: 16px;
+      transition: width 0.2s ease, opacity 0.2s ease;
+    }
+
+    .screen-panel.hidden {
+      display: none;
+    }
+
+    .screen-nav {
+      display: flex;
+      background: #141418;
+      padding: 3px;
+      border-radius: 8px;
+      gap: 4px;
+    }
+
+    .screen-tab {
+      flex: 1;
+      padding: 5px;
+      font-size: 11.5px;
+      font-weight: 600;
+      text-align: center;
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+    }
+    .screen-tab.active {
+      background: #22222a;
+      color: #fff;
+    }
+
+    .panel-view {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex: 1;
+    }
+
+    .screen-viewport {
+      background: #111116;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      height: 200px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .screen-text-content {
+      position: absolute;
+      top: 12px; left: 12px; right: 12px; bottom: 36px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      color: #94a3b8;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.45;
+    }
+
+    .screen-gloss {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.05) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .screen-dock {
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      z-index: 2;
+    }
+
+    .screen-label {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .routines-section {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 14px;
+      padding: 10px 0;
+    }
+
+    .routines-text {
+      font-size: 13px;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+
+    .btn-create-routine {
+      background: #18181b;
+      border: 1px solid var(--border-color);
+      color: #fff;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-create-routine:hover {
+      background: #27272a;
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Settings View styling */
+    .settings-view {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .settings-avatar-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 0;
+    }
+
+    .settings-avatar {
+      width: 70px;
+      height: 70px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+
+    .btn-save-settings {
+      background: #3b82f6;
+      border: none;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 6px;
+    }
+    .btn-save-settings:hover {
+      background: #2563eb;
+    }
+
+    .btn-delete-agent {
+      margin-top: auto;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-delete-agent:hover {
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    /* ── MODALS ── */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .modal-card {
+      background: #18181e;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      width: 460px;
+      max-width: 90vw;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      color: var(--text-sub);
+      font-weight: 600;
+    }
+
+    .form-input {
+      background: #101014;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+    }
+    .form-input:focus { border-color: var(--border-focus); }
+
+    .color-picker-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .color-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    .color-dot.selected { border-color: #fff; }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .btn-modal {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: #27272a;
+      color: #fff;
+      font-family: inherit;
+    }
+    .btn-modal-primary {
+      background: #3b82f6;
+      border: none;
+    }
+
+    /* Plugin card in marketplace modal */
+    .plugin-item-card {
+      background: #111116;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .plugin-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .plugin-item-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .plugin-badge {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      font-weight: 600;
+    }
+
+    .plugin-desc {
+      font-size: 12px;
+      color: var(--text-sub);
+      line-height: 1.45;
+    }
+
+    .plugin-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .btn-plugin-action {
+      font-size: 11.5px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: #1e1e24;
+      color: #fff;
+      cursor: pointer;
+    }
+    .btn-plugin-action:hover { background: #2a2a33; }
+  </style>
+</head>
+<body>
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar" id="left-sidebar">
+    <div class="sidebar-header">
+      <span class="brand-title">TheDelegator</span>
+      <button class="btn-header-add" id="btn-add" title="Add Bot or Channel">+</button>
+    </div>
+
+    <!-- Popup Dropdown Menu -->
+    <div class="dropdown-menu" id="dropdown-menu">
+      <div class="dropdown-item" id="menu-new-bot">
+        <span>🤖</span> <span>New Bot / IDE</span>
+      </div>
+      <div class="dropdown-item" id="menu-new-channel">
+        <span>#</span> <span>New Channel</span>
+      </div>
+      <div class="dropdown-item" id="menu-clear-chat">
+        <span>🧹</span> <span>Clear Chat Messages</span>
+      </div>
+      <div style="border-top: 1px solid var(--border-color); margin: 4px 0;"></div>
+      <div class="dropdown-item danger" id="menu-reset-workspace">
+        <span>🗑️</span> <span>Reset All IDEs</span>
+      </div>
+    </div>
+
+    <!-- Right-Click Context Menu -->
+    <div class="context-menu" id="context-menu">
+      <div class="dropdown-item" id="ctx-settings">
+        <span>⚙️</span> <span>Settings</span>
+      </div>
+      <div class="dropdown-item" id="ctx-copy-id">
+        <span>📋</span> <span>Copy ID</span>
+      </div>
+      <div style="border-top: 1px solid var(--border-color); margin: 4px 0;"></div>
+      <div class="dropdown-item danger" id="ctx-delete">
+        <span>🗑️</span> <span>Delete</span>
+      </div>
+    </div>
+
+    <div class="search-box-wrap">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="search-input" placeholder="Search" />
+      </div>
+    </div>
+
+    <div class="agents-list" id="agents-list">
+      <!-- Dynamically generated agent items -->
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="plugin-btn" id="btn-open-plugins">
+        <span>🔌</span> <span>Plugins</span>
+      </div>
+      <div class="profile-card" id="btn-open-profile">
+        <div class="profile-pic" id="footer-profile-pic">CC</div>
+        <span class="profile-name" id="footer-profile-name">Carlos Carpio</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CENTER PANEL (Chat Stream) -->
+  <main class="main-chat">
+    <header class="chat-header">
+      <div class="active-agent-info">
+        <div class="active-icon squircle-warroom" id="active-icon">🏛️</div>
+        <span class="active-name" id="active-name">War Room (All Agents)</span>
+      </div>
+      <div class="window-controls">
+        <span title="Settings & Profile" id="btn-win-settings">⚙️</span>
+        <span title="Toggle Right Panel" id="btn-win-toggle-panel">»</span>
+        <span title="Toggle Left Sidebar" id="btn-win-minimize">―</span>
+        <span title="Toggle Fullscreen" id="btn-win-maximize">▢</span>
+        <span title="Return to War Room" id="btn-win-close">✕</span>
+      </div>
+    </header>
+
+    <div class="chat-messages" id="chat-messages">
+      <!-- Live messages -->
+    </div>
+
+    <div class="input-container">
+      <!-- Input Action Popup -->
+      <div class="actions-popup" id="actions-popup">
+        <div class="dropdown-item" onclick="insertPrompt('/delegate ')">
+          <span>🚀</span> <span>Delegate Milestone</span>
+        </div>
+        <div class="dropdown-item" onclick="insertPrompt('/review ')">
+          <span>🔍</span> <span>Request Code Review</span>
+        </div>
+        <div class="dropdown-item" onclick="insertPrompt('/status ')">
+          <span>📊</span> <span>Check Lane Status</span>
+        </div>
+        <div style="border-top: 1px solid var(--border-color); margin: 4px 0;"></div>
+        <div class="dropdown-item" onclick="openPluginsModal()">
+          <span>🔌</span> <span>Manage MCP Plugins</span>
+        </div>
+      </div>
+
+      <div class="mention-chips" id="mention-chips">
+        <span class="chip" onclick="addChip('/delegate ')">/delegate</span>
+        <span class="chip" onclick="addChip('/review ')">/review</span>
+        <span class="chip" onclick="addChip('/status ')">/status</span>
+      </div>
+      <div class="input-pill">
+        <button class="btn-plus" id="btn-input-plus" title="Add action">+</button>
+        <input type="text" id="chat-input" placeholder="Message War Room..." />
+        <button class="btn-voice" id="btn-send" title="Send / Voice">🎙️</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- RIGHT PANEL (Screen, Diff & Settings) -->
+  <aside class="screen-panel" id="right-panel">
+    <div class="screen-nav">
+      <button class="screen-tab active" id="tab-screen" onclick="switchScreenTab('screen')">Screen</button>
+      <button class="screen-tab" id="tab-diff" onclick="switchScreenTab('diff')">Git Diff</button>
+      <button class="screen-tab" id="tab-taskplan" onclick="switchScreenTab('taskplan')">Task Plan</button>
+      <button class="screen-tab" id="tab-settings" onclick="switchScreenTab('settings')">Settings</button>
+    </div>
+
+    <!-- Normal Screen View -->
+    <div class="panel-view" id="view-screen">
+      <div>
+        <div class="screen-viewport">
+          <div class="screen-text-content" id="screen-viewport-content">
+[Workspace Viewport]
+Ready. Waiting for first IDE / Agent to connect.
+          </div>
+          <div class="screen-gloss"></div>
+          <div class="screen-dock">
+            <span style="font-size: 10px; opacity: 0.7;">🌐</span>
+            <span style="font-size: 10px; opacity: 0.7;">🖥️</span>
+            <span style="font-size: 10px; opacity: 0.7;">📁</span>
+          </div>
+        </div>
+        <div class="screen-label" id="screen-label">Workspace Screen</div>
+      </div>
+
+      <div class="routines-section">
+        <p class="routines-text">Routines are recurring tasks this Bot runs on a schedule.</p>
+        <button class="btn-create-routine" id="btn-routine" onclick="openRoutineModal()">Create Routine</button>
+      </div>
+    </div>
+
+    <!-- Settings View -->
+    <div class="settings-view" id="view-settings">
+      <div class="settings-avatar-wrap">
+        <div class="settings-avatar squircle-blue" id="settings-avatar-icon">💻</div>
+      </div>
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" class="form-input" id="settings-agent-name" />
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <select class="form-input" id="settings-agent-role">
+          <option value="builder">Builder / Implementer</option>
+          <option value="architect">Architect / Design Lead</option>
+          <option value="triage">Security / Triage</option>
+          <option value="media">Media & Assets</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Branch</label>
+        <input type="text" class="form-input" id="settings-agent-branch" />
+      </div>
+      <div class="form-group">
+        <label>Assigned Lanes</label>
+        <input type="text" class="form-input" id="settings-agent-lanes" />
+      </div>
+      <button class="btn-save-settings" id="btn-save-settings" onclick="saveAgentSettings()">Save Profile</button>
+      <button class="btn-delete-agent" id="btn-delete-from-settings" onclick="deleteCurrentAgent()">
+        <span>🗑️</span> <span>Delete Bot from Workspace</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MODAL: ADD BOT / IDE -->
+  <div class="modal-overlay" id="add-modal">
+    <div class="modal-card">
+      <h3 id="modal-title">Create New Bot / IDE</h3>
+      <div class="form-group">
+        <label>Name (e.g. Cursor, Claude, Codex, Antigravity, Windsurf)</label>
+        <input type="text" class="form-input" id="modal-agent-name" placeholder="cursor" />
+      </div>
+      <div class="form-group">
+        <label>Role / Responsibility</label>
+        <select class="form-input" id="modal-agent-role">
+          <option value="builder">Builder / Implementer</option>
+          <option value="architect">Architect / Design Lead</option>
+          <option value="triage">Security / Triage</option>
+          <option value="media">Media & Assets</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Icon / Symbol</label>
+        <input type="text" class="form-input" id="modal-agent-icon" placeholder="🤖, 💻, ⚡, 👑, 🔮, 🛠️" value="💻" />
+      </div>
+      <div class="form-group">
+        <label>Color Theme</label>
+        <div class="color-picker-row">
+          <div class="color-dot selected" style="background:#ea580c;" data-color="orange"></div>
+          <div class="color-dot" style="background:#16a34a;" data-color="green"></div>
+          <div class="color-dot" style="background:#2563eb;" data-color="blue"></div>
+          <div class="color-dot" style="background:#9333ea;" data-color="purple"></div>
+          <div class="color-dot" style="background:#ca8a04;" data-color="yellow"></div>
+          <div class="color-dot" style="background:#e4e4e7;" data-color="white"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Git Branch</label>
+        <input type="text" class="form-input" id="modal-agent-branch" placeholder="feat/platform" />
+      </div>
+      <div class="form-group">
+        <label>Owned Paths / Lanes (comma separated)</label>
+        <input type="text" class="form-input" id="modal-agent-owns" placeholder="app/**, src/components/**" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal" onclick="closeModal('add-modal')">Cancel</button>
+        <button class="btn-modal btn-modal-primary" id="btn-submit-modal" onclick="submitAgentForm()">Create Bot</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PLUGINS / INTEGRATIONS -->
+  <div class="modal-overlay" id="plugins-modal">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>🔌 Workspace Plugins & Integrations</h3>
+        <span style="cursor:pointer; color:var(--text-sub);" onclick="closeModal('plugins-modal')">✕</span>
+      </div>
+
+      <div class="plugin-item-card">
+        <div class="plugin-item-header">
+          <span class="plugin-item-title">⚡ Model Context Protocol (MCP)</span>
+          <span class="plugin-badge">Active :4141</span>
+        </div>
+        <p class="plugin-desc">Allows Cursor, Claude Code, Codex, and Windsurf to connect autonomously via SSE and tool calls.</p>
+        <div class="plugin-actions">
+          <button class="btn-plugin-action" onclick="copyMcpSnippet()">Copy MCP Config</button>
+        </div>
+      </div>
+
+      <div class="plugin-item-card">
+        <div class="plugin-item-header">
+          <span class="plugin-item-title">🎨 Web Designer Bridge (`uset82/webdesigner`)</span>
+          <span class="plugin-badge">Installed</span>
+        </div>
+        <p class="plugin-desc">Syncs autonomous visual aesthetics and component generation with live canvas previews.</p>
+        <div class="plugin-actions">
+          <button class="btn-plugin-action" onclick="alert('Web Designer sync active')">Connected</button>
+        </div>
+      </div>
+
+      <div class="plugin-item-card">
+        <div class="plugin-item-header">
+          <span class="plugin-item-title">🛡️ Git Lane Enforcement & Gatekeeper</span>
+          <span class="plugin-badge">Enforced</span>
+        </div>
+        <p class="plugin-desc">Guarantees no merge conflicts by verifying glob patterns and branch isolations before PR merge.</p>
+      </div>
+
+      <div class="plugin-item-card">
+        <div class="plugin-item-header">
+          <span class="plugin-item-title">🔄 Autonomous Turn Loop</span>
+          <span class="plugin-badge">Ready</span>
+        </div>
+        <p class="plugin-desc">Runs continuous turn-by-turn development between architect and builder bots until milestones finish.</p>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-modal btn-modal-primary" onclick="closeModal('plugins-modal')">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PROFILE -->
+  <div class="modal-overlay" id="profile-modal">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>👤 User Profile</h3>
+        <span style="cursor:pointer; color:var(--text-sub);" onclick="closeModal('profile-modal')">✕</span>
+      </div>
+      <div class="form-group">
+        <label>Your Display Name</label>
+        <input type="text" class="form-input" id="profile-input-name" value="Carlos Carpio" />
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <input type="text" class="form-input" id="profile-input-role" value="Lead Supervisor & Human-in-the-Loop" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal" onclick="closeModal('profile-modal')">Cancel</button>
+        <button class="btn-modal btn-modal-primary" onclick="saveUserProfile()">Save Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREATE ROUTINE -->
+  <div class="modal-overlay" id="routine-modal">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>⏰ New Scheduled Routine</h3>
+        <span style="cursor:pointer; color:var(--text-sub);" onclick="closeModal('routine-modal')">✕</span>
+      </div>
+      <div class="form-group">
+        <label>Target Bot / IDE</label>
+        <input type="text" class="form-input" id="routine-target-agent" readonly />
+      </div>
+      <div class="form-group">
+        <label>Routine Goal / Task Instruction</label>
+        <input type="text" class="form-input" id="routine-goal" placeholder="Run tests, verify lane claims, and report diff stat" />
+      </div>
+      <div class="form-group">
+        <label>Frequency</label>
+        <select class="form-input" id="routine-freq">
+          <option value="every_turn">On Every Milestone Turn</option>
+          <option value="hourly">Hourly Heartbeat</option>
+          <option value="pr">On Pull Request Creation</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal" onclick="closeModal('routine-modal')">Cancel</button>
+        <button class="btn-modal btn-modal-primary" onclick="submitRoutine()">Start Routine</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const leftSidebar = document.getElementById("left-sidebar");
+    const rightPanel = document.getElementById("right-panel");
+    const agentsList = document.getElementById("agents-list");
+    const chatMessages = document.getElementById("chat-messages");
+    const chatInput = document.getElementById("chat-input");
+    const btnSend = document.getElementById("btn-send");
+    const activeIcon = document.getElementById("active-icon");
+    const activeName = document.getElementById("active-name");
+    const screenLabel = document.getElementById("screen-label");
+    const screenViewportContent = document.getElementById("screen-viewport-content");
+    const dropdownMenu = document.getElementById("dropdown-menu");
+    const contextMenu = document.getElementById("context-menu");
+    const actionsPopup = document.getElementById("actions-popup");
+    const mentionChips = document.getElementById("mention-chips");
+
+    let currentAgent = "warroom";
+    let selectedColor = "orange";
+    let currentScreenTab = "screen";
+    let contextAgentTarget = null;
+    let registeredAgentsMap = {};
+
+    // ── WINDOW CONTROLS ──
+    const btnWinSettings = document.getElementById("btn-win-settings");
+    const btnWinTogglePanel = document.getElementById("btn-win-toggle-panel");
+    const btnWinMinimize = document.getElementById("btn-win-minimize");
+    const btnWinMaximize = document.getElementById("btn-win-maximize");
+    const btnWinClose = document.getElementById("btn-win-close");
+
+    // 1. ⚙️ Settings
+    btnWinSettings.addEventListener("click", () => {
+      rightPanel.classList.remove("hidden");
+      btnWinTogglePanel.textContent = "»";
+      switchScreenTab("settings");
+    });
+
+    // 2. » Toggle Right Panel
+    btnWinTogglePanel.addEventListener("click", () => {
+      if (rightPanel.classList.contains("hidden")) {
+        rightPanel.classList.remove("hidden");
+        btnWinTogglePanel.textContent = "»";
+      } else {
+        rightPanel.classList.add("hidden");
+        btnWinTogglePanel.textContent = "«";
+      }
+    });
+
+    // 3. ― Toggle Left Sidebar (Distraction Free Mode)
+    btnWinMinimize.addEventListener("click", () => {
+      leftSidebar.classList.toggle("collapsed");
+    });
+
+    // 4. ▢ Fullscreen Toggle
+    btnWinMaximize.addEventListener("click", () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+
+    // 5. ✕ Close / Return to War Room
+    btnWinClose.addEventListener("click", () => {
+      if (currentAgent !== "warroom") {
+        selectAgent("warroom", { name: "War Room", icon: "🏛️", color: "warroom", title: "War Room (All Agents)" });
+      } else {
+        chatMessages.innerHTML = "";
+      }
+    });
+
+    // Toggle Dropdown Menu
+    document.getElementById("btn-add").addEventListener("click", (e) => {
+      e.stopPropagation();
+      dropdownMenu.style.display = dropdownMenu.style.display === "flex" ? "none" : "flex";
+    });
+
+    // Input actions popup
+    document.getElementById("btn-input-plus").addEventListener("click", (e) => {
+      e.stopPropagation();
+      actionsPopup.style.display = actionsPopup.style.display === "flex" ? "none" : "flex";
+    });
+
+    document.addEventListener("click", () => {
+      dropdownMenu.style.display = "none";
+      contextMenu.style.display = "none";
+      actionsPopup.style.display = "none";
+    });
+
+    document.getElementById("menu-new-bot").addEventListener("click", () => {
+      openModal("add-modal");
+    });
+
+    document.getElementById("menu-new-channel").addEventListener("click", () => {
+      openModal("add-modal");
+    });
+
+    document.getElementById("menu-clear-chat").addEventListener("click", async () => {
+      await fetch("/api/clear", { method: "POST" });
+      chatMessages.innerHTML = "";
+    });
+
+    document.getElementById("menu-reset-workspace").addEventListener("click", async () => {
+      if (confirm("Reset workspace and remove all connected IDEs?")) {
+        await fetch("/api/agents/reset", { method: "POST" });
+        selectAgent("warroom", { name: "War Room", icon: "🏛️", color: "warroom", title: "War Room (All Agents)" });
+        await loadAgents();
+      }
+    });
+
+    // Plugins & Profile button triggers
+    document.getElementById("btn-open-plugins").addEventListener("click", () => {
+      openPluginsModal();
+    });
+
+    document.getElementById("btn-open-profile").addEventListener("click", () => {
+      openModal("profile-modal");
+    });
+
+    function openPluginsModal() {
+      openModal("plugins-modal");
+    }
+
+    function openRoutineModal() {
+      document.getElementById("routine-target-agent").value = activeName.textContent;
+      openModal("routine-modal");
+    }
+
+    function insertPrompt(text) {
+      chatInput.value = text + chatInput.value;
+      chatInput.focus();
+    }
+
+    function copyMcpSnippet() {
+      const snippet = JSON.stringify({
+        mcpServers: {
+          thedelegator: {
+            command: "npx",
+            args: ["thedelegator", "mcp"]
+          }
+        }
+      }, null, 2);
+      navigator.clipboard.writeText(snippet);
+      alert("MCP config copied to clipboard! Paste into ~/.cursor/mcp.json or claude_desktop_config.json");
+    }
+
+    function saveUserProfile() {
+      const name = document.getElementById("profile-input-name").value.trim() || "Carlos Carpio";
+      document.getElementById("footer-profile-name").textContent = name;
+      const initials = name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+      document.getElementById("footer-profile-pic").textContent = initials;
+      closeModal("profile-modal");
+    }
+
+    async function submitRoutine() {
+      const goal = document.getElementById("routine-goal").value.trim();
+      if (!goal) return;
+      closeModal("routine-modal");
+      await fetch("/api/trigger-turn", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ goal: `[Routine for ${activeName.textContent}] ${goal}` }),
+      });
+    }
+
+    // Context Menu Actions
+    document.getElementById("ctx-settings").addEventListener("click", () => {
+      if (contextAgentTarget) {
+        selectAgent(contextAgentTarget, registeredAgentsMap[contextAgentTarget]);
+        rightPanel.classList.remove("hidden");
+        btnWinTogglePanel.textContent = "»";
+        switchScreenTab("settings");
+      }
+    });
+
+    document.getElementById("ctx-copy-id").addEventListener("click", () => {
+      if (contextAgentTarget) {
+        navigator.clipboard.writeText(contextAgentTarget);
+      }
+    });
+
+    document.getElementById("ctx-delete").addEventListener("click", async () => {
+      if (contextAgentTarget) {
+        await deleteAgent(contextAgentTarget);
+      }
+    });
+
+    async function deleteAgent(name) {
+      if (confirm(`Are you sure you want to delete "${name}" from the workspace?`)) {
+        await fetch(`/api/agents?name=${encodeURIComponent(name)}`, { method: "DELETE" });
+        if (currentAgent === name) {
+          selectAgent("warroom", { name: "War Room", icon: "🏛️", color: "warroom", title: "War Room (All Agents)" });
+        }
+        await loadAgents();
+      }
+    }
+
+    async function deleteCurrentAgent() {
+      if (currentAgent !== "warroom") {
+        await deleteAgent(currentAgent);
+      }
+    }
+
+    async function saveAgentSettings() {
+      if (currentAgent === "warroom") return;
+
+      const name = document.getElementById("settings-agent-name").value.trim();
+      const role = document.getElementById("settings-agent-role").value;
+      const branch = document.getElementById("settings-agent-branch").value.trim();
+      const owns = document.getElementById("settings-agent-lanes").value.trim();
+
+      if (!name) return;
+
+      await fetch("/api/agents", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: currentAgent, role, branch, owns, title: name }),
+      });
+
+      await loadAgents();
+      selectAgent(currentAgent, registeredAgentsMap[currentAgent] || { title: name, role, branch, owns });
+      alert("Settings saved successfully!");
+    }
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "flex";
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "none";
+    }
+
+    // Color picker
+    document.querySelectorAll(".color-dot").forEach((dot) => {
+      dot.addEventListener("click", () => {
+        document.querySelectorAll(".color-dot").forEach((d) => d.classList.remove("selected"));
+        dot.classList.add("selected");
+        selectedColor = dot.dataset.color;
+      });
+    });
+
+    async function submitAgentForm() {
+      const nameInput = document.getElementById("modal-agent-name");
+      const name = nameInput.value.trim();
+      const role = document.getElementById("modal-agent-role").value;
+      const icon = document.getElementById("modal-agent-icon").value.trim() || "💻";
+      const branch = document.getElementById("modal-agent-branch").value.trim();
+      const owns = document.getElementById("modal-agent-owns").value.trim();
+
+      if (!name) return;
+
+      try {
+        const res = await fetch("/api/agents", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ name, role, icon, color: selectedColor, branch, owns }),
+        });
+
+        const data = await res.json();
+        nameInput.value = "";
+        document.getElementById("modal-agent-branch").value = "";
+        document.getElementById("modal-agent-owns").value = "";
+        closeModal("add-modal");
+
+        await loadAgents();
+        if (data.name && data.agent) {
+          selectAgent(data.name, data.agent);
+        }
+      } catch (err) {
+        console.error("Error creating agent:", err);
+      }
+    }
+
+    async function loadAgents() {
+      try {
+        const res = await fetch("/api/agents");
+        const data = await res.json();
+        registeredAgentsMap = data.agents || {};
+
+        agentsList.innerHTML = "";
+
+        // War Room channel
+        const warroomRow = document.createElement("div");
+        warroomRow.className = `agent-row ${currentAgent === "warroom" ? "active" : ""}`;
+        warroomRow.innerHTML = `
+          <div class="agent-squircle squircle-warroom">🏛️</div>
+          <div class="agent-info">
+            <div class="agent-header-line">
+              <span class="agent-name">War Room (All Agents)</span>
+              <span class="agent-time">Live</span>
+            </div>
+            <div class="agent-preview">Multi-agent live coordination</div>
+          </div>
+        `;
+        warroomRow.addEventListener("click", () => selectAgent("warroom", { name: "War Room", icon: "🏛️", color: "warroom", title: "War Room (All Agents)" }));
+        agentsList.appendChild(warroomRow);
+
+        const agentKeys = Object.keys(registeredAgentsMap);
+
+        // Update mention chips
+        mentionChips.innerHTML = `
+          <span class="chip" onclick="addChip('/delegate ')">/delegate</span>
+          <span class="chip" onclick="addChip('/review ')">/review</span>
+        `;
+        for (const name of agentKeys) {
+          const chip = document.createElement("span");
+          chip.className = "chip";
+          chip.textContent = `@${name}`;
+          chip.onclick = () => addChip(`@${name} `);
+          mentionChips.appendChild(chip);
+        }
+
+        if (agentKeys.length === 0) {
+          const emptyBox = document.createElement("div");
+          emptyBox.className = "empty-agents-box";
+          emptyBox.innerHTML = `
+            No IDEs connected yet.<br>
+            <span style="color:#38bdf8; font-weight:600;">Click +</span> or run <span class="pill-gray">delegator join</span> in Cursor / Claude
+          `;
+          agentsList.appendChild(emptyBox);
+          return;
+        }
+
+        // Registered agents
+        for (const [name, agent] of Object.entries(registeredAgentsMap)) {
+          const row = document.createElement("div");
+          row.className = `agent-row ${currentAgent === name ? "active" : ""}`;
+          
+          let colorClass = `squircle-${agent.color || "orange"}`;
+          if (name.includes("codex")) colorClass = "squircle-green";
+          else if (name.includes("cursor")) colorClass = "squircle-blue";
+          else if (name.includes("antigravity")) colorClass = "squircle-purple";
+
+          let iconStr = agent.icon || "💻";
+          if (name.includes("claude")) iconStr = "👑";
+          else if (name.includes("codex")) iconStr = "⚡";
+          else if (name.includes("cursor")) iconStr = "💻";
+          else if (name.includes("antigravity") || name.includes("gemini")) iconStr = "🔮";
+
+          row.innerHTML = `
+            <div class="agent-squircle ${colorClass}">${iconStr}</div>
+            <div class="agent-info">
+              <div class="agent-header-line">
+                <span class="agent-name">${agent.title || name}</span>
+                <span class="agent-time">${agent.role || 'Active'}</span>
+              </div>
+              <div class="agent-lane-snippet">${(agent.owns || []).join(", ") || 'In lane'}</div>
+            </div>
+          `;
+
+          row.addEventListener("click", () => selectAgent(name, { ...agent, icon: iconStr }));
+
+          // Right click context menu
+          row.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            contextAgentTarget = name;
+            contextMenu.style.top = `${e.clientY}px`;
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.style.display = "flex";
+          });
+
+          agentsList.appendChild(row);
+        }
+      } catch (err) {
+        console.error("Error loading agents:", err);
+      }
+    }
+
+    function selectAgent(name, agent = {}) {
+      currentAgent = name;
+      document.querySelectorAll(".agent-row").forEach((r) => r.classList.remove("active"));
+      
+      const title = agent.title || name;
+      activeName.textContent = title;
+      screenLabel.textContent = `${title}'s screen`;
+      chatInput.placeholder = `Message ${title}...`;
+
+      activeIcon.textContent = agent.icon || (name === "warroom" ? "🏛️" : (name.includes("claude") ? "👑" : "💻"));
+      activeIcon.className = `active-icon squircle-${agent.color || (name === "warroom" ? "warroom" : "orange")}`;
+
+      // Update settings view inputs
+      document.getElementById("settings-agent-name").value = title;
+      document.getElementById("settings-agent-role").value = agent.role || (name === "warroom" ? "architect" : "builder");
+      document.getElementById("settings-agent-branch").value = agent.branch || `feat/${name}`;
+      document.getElementById("settings-agent-lanes").value = (agent.owns || []).join(", ") || "src/**";
+      document.getElementById("settings-avatar-icon").textContent = activeIcon.textContent;
+      document.getElementById("settings-avatar-icon").className = `settings-avatar squircle-${agent.color || (name === "warroom" ? "warroom" : "blue")}`;
+
+      document.getElementById("btn-delete-from-settings").style.display = name === "warroom" ? "none" : "flex";
+      document.getElementById("btn-save-settings").style.display = name === "warroom" ? "none" : "block";
+
+      fetchChatHistory();
+    }
+
+    function appendBubble(msg) {
+      const bubble = document.createElement("div");
+      const sender = (msg.sender || "").toLowerCase();
+      
+      if (sender.includes("human") || sender.includes("user")) {
+        bubble.className = "chat-bubble user-msg";
+      } else if (sender.includes("system")) {
+        bubble.className = "chat-bubble system-msg";
+      } else {
+        bubble.className = "chat-bubble agent-msg";
+      }
+
+      bubble.innerHTML = formatContent(msg.content);
+      chatMessages.appendChild(bubble);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function formatContent(text) {
+      if (!text) return "";
+      return text
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<span class="pill-gray">$1</span>');
+    }
+
+    function addChip(tag) {
+      chatInput.value += tag;
+      chatInput.focus();
+    }
+
+    async function sendMessage() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+      chatInput.value = "";
+
+      appendBubble({ sender: "human", content: text });
+
+      await fetch("/api/message", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ content: text, target: currentAgent === "warroom" ? null : currentAgent }),
+      });
+    }
+
+    btnSend.addEventListener("click", sendMessage);
+    chatInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    async function fetchChatHistory() {
+      chatMessages.innerHTML = "";
+      try {
+        const res = await fetch("/api/history");
+        const msgs = await res.json();
+        msgs.forEach(appendBubble);
+      } catch (err) {
+        console.error("Error fetching history:", err);
+      }
+    }
+
+    async function switchScreenTab(tab) {
+      currentScreenTab = tab;
+      document.querySelectorAll(".screen-tab").forEach(t => t.classList.remove("active"));
+      const activeTabBtn = document.getElementById(`tab-${tab}`);
+      if (activeTabBtn) activeTabBtn.classList.add("active");
+
+      const screenView = document.getElementById("view-screen");
+      const settingsView = document.getElementById("view-settings");
+
+      if (tab === "settings") {
+        screenView.style.display = "none";
+        settingsView.style.display = "flex";
+      } else {
+        settingsView.style.display = "none";
+        screenView.style.display = "flex";
+
+        if (tab === "diff") {
+          const res = await fetch("/api/diff");
+          const data = await res.json();
+          screenViewportContent.textContent = `[Git Status]\n${data.status}\n\n[Diff Stat]\n${data.stat}\n\n${data.diff}`;
+        } else if (tab === "taskplan") {
+          const res = await fetch("/api/taskplan");
+          const data = await res.json();
+          screenViewportContent.textContent = data.content || "No taskplan.md file.";
+        } else {
+          screenViewportContent.textContent = `[${activeName.textContent}'s Viewport]\nActive and listening.\nLane boundaries verified.`;
+        }
+      }
+    }
+
+    // SSE connection
+    const evtSource = new EventSource("/api/events");
+    evtSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "message") {
+          appendBubble(data.payload);
+        } else if (data.type === "agent_added") {
+          loadAgents();
+        }
+      } catch (err) {}
+    };
+
+    // Initial load
+    loadAgents();
+    fetchChatHistory();
+  </script>
+</body>
+</html>

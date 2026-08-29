@@ -16,7 +16,10 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { findViolations, assertDisjoint } from "../lib/lanes.mjs";
-import { probeAgents } from "../lib/tools.mjs";
+import { createAutoOrchestrator } from "../lib/orchestrator.mjs";
+import { createBridgeServer } from "../lib/server.mjs";
+import { joinChatRoom } from "../lib/client.mjs";
+import { createMcpServer } from "../lib/mcp.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MANIFEST = "agents.manifest.json";
@@ -55,14 +58,20 @@ function findRepoRoot(start = process.cwd()) {
   return top || start;
 }
 
-function loadManifest() {
+function loadManifest(required = true) {
   const root = findRepoRoot();
-  // Deduped: cwd and the repo root are the same place more often than not.
   const candidates = [
     ...new Set([join(process.cwd(), MANIFEST), join(root, MANIFEST), join(root, "thedelegator", MANIFEST)]),
   ];
   const found = candidates.find(existsSync);
   if (!found) {
+    if (!required) {
+      const templatePath = join(HERE, "..", "templates", "manifest.starter.json");
+      if (existsSync(templatePath)) {
+        const m = JSON.parse(readFileSync(templatePath, "utf8"));
+        return { manifest: m, manifestPath: templatePath, root };
+      }
+    }
     console.error(C.red(`No ${MANIFEST} found.`));
     console.error(`Looked in:\n  ${candidates.join("\n  ")}`);
     console.error(`\nRun ${C.cyan("delegator init")} to create one.`);
@@ -357,10 +366,137 @@ Next:
 `);
 }
 
+async function cmdChat(argv) {
+  const { manifest: m, root } = loadManifest(false);
+  const portArg = argv.find((a) => a.startsWith("--port="))?.split("=")[1];
+  const port = portArg ? parseInt(portArg, 10) : 4141;
+
+  const storageDir = join(root, ".delegator", "messages");
+  const orchestrator = createAutoOrchestrator({ manifest: m, repoRoot: root, storageDir });
+  const bridge = createBridgeServer({ orchestrator, port });
+
+  const url = await bridge.listen(port);
+
+  console.log(`\n${C.bold("⚡ TheDelegator — Multi-Agent Live Chat Hub")}`);
+  console.log(`${"═".repeat(60)}`);
+  console.log(`Web Spectator Console: ${C.cyan(url)}`);
+  console.log(`Architect:             ${C.yellow(m.shared?.owner || "claude")}`);
+  console.log(`Active Agents:         ${C.green(Object.keys(m.agents || {}).join(", "))}`);
+  console.log(`Auto-Verification:     ${C.green("ENABLED")} (lanes enforced on every turn)`);
+  console.log(`${"═".repeat(60)}`);
+  console.log(`${C.dim("Watching conversation... Press Ctrl+C to stop.")}\n`);
+
+  orchestrator.bus.on("message", (msg) => {
+    const time = new Date(msg.timestamp).toLocaleTimeString();
+    const tag = msg.sender.toUpperCase();
+    let color = C.cyan;
+    if (tag.includes("CLAUDE")) color = C.yellow;
+    if (tag.includes("HUMAN")) color = C.green;
+    if (tag.includes("SYSTEM")) color = C.red;
+
+    console.log(`\n[${C.dim(time)}] ${color(C.bold(tag))} (${msg.type}):`);
+    console.log(msg.content);
+    if (msg.metadata?.laneCheck) {
+      const passed = msg.metadata.laneCheck.passed;
+      console.log(passed ? C.green("  ✓ Lane check passed") : C.red("  ✗ Lane violation detected"));
+    }
+  });
+
+  const goalArg = argv.find((a) => a.startsWith("--goal="))?.split("=").slice(1).join("=");
+  if (goalArg) {
+    console.log(`${C.bold("Starting Mission:")} ${goalArg}`);
+    orchestrator.start({ goal: goalArg }).catch((err) => {
+      console.error(C.red(`Session error: ${err.message}`));
+    });
+  }
+}
+
+async function cmdLoop(argv) {
+  const { manifest: m, root } = loadManifest();
+  const goalArg = argv.find((a) => a.startsWith("--goal="))?.split("=").slice(1).join("=");
+  const maxTurnsArg = argv.find((a) => a.startsWith("--max-turns="))?.split("=")[1];
+  const maxTurns = maxTurnsArg ? parseInt(maxTurnsArg, 10) : 20;
+
+  if (!goalArg) {
+    console.error(C.red("Missing --goal argument."));
+    console.error(`Example: ${C.cyan('delegator loop --goal="Implement auth middleware and test coverage"')}`);
+    process.exit(2);
+  }
+
+  const storageDir = join(root, ".delegator", "messages");
+  const orchestrator = createAutoOrchestrator({ manifest: m, repoRoot: root, storageDir });
+  orchestrator.maxTurns = maxTurns;
+
+  console.log(`\n${C.bold("⚡ TheDelegator — Autonomous Execution Loop")}`);
+  console.log(`Goal: ${goalArg}`);
+  console.log(`Max turns: ${maxTurns}\n`);
+
+  orchestrator.bus.on("message", (msg) => {
+    const tag = msg.sender.toUpperCase();
+    console.log(`\n--- [${tag}] (${msg.type}) ---`);
+    console.log(msg.content);
+  });
+
+  try {
+    const result = await orchestrator.start({ goal: goalArg });
+    console.log(`\n${C.green("✓ Session finished with status:")} ${result.status} (${result.turnCount} turns)`);
+  } catch (err) {
+    console.error(C.red(`Execution loop failed: ${err.message}`));
+    process.exit(1);
+  }
+}
+
+async function cmdBridge(argv) {
+  const { manifest: m, root } = loadManifest();
+  const portArg = argv.find((a) => a.startsWith("--port="))?.split("=")[1];
+  const port = portArg ? parseInt(portArg, 10) : 4141;
+
+  const storageDir = join(root, ".delegator", "messages");
+  const orchestrator = createAutoOrchestrator({ manifest: m, repoRoot: root, storageDir });
+  const bridge = createBridgeServer({ orchestrator, port });
+
+  const url = await bridge.listen(port);
+  console.log(`TheDelegator bridge daemon running at ${url}`);
+}
+
+async function cmdJoin(argv) {
+  const agentName = argv.find((a) => a.startsWith("--agent=") || a.startsWith("--name="))?.split("=")[1] || "cursor";
+  const role = argv.find((a) => a.startsWith("--role="))?.split("=")[1] || "builder";
+  const branch = argv.find((a) => a.startsWith("--branch="))?.split("=")[1] || `feat/${agentName}`;
+  const owns = argv.find((a) => a.startsWith("--owns=") || a.startsWith("--lane="))?.split("=")[1] || `src/${agentName}/**`;
+  const url = argv.find((a) => a.startsWith("--url="))?.split("=")[1] || "http://localhost:4141";
+
+  await joinChatRoom({ agentName, role, branch, owns, serverUrl: url });
+}
+
+async function cmdMcp(argv) {
+  const { manifest: m, root } = loadManifest(false);
+  const portArg = argv.find((a) => a.startsWith("--port="))?.split("=")[1];
+  const port = portArg ? parseInt(portArg, 10) : 4142;
+
+  const storageDir = join(root, ".delegator", "messages");
+  const orchestrator = createAutoOrchestrator({ manifest: m, repoRoot: root, storageDir });
+  const mcp = createMcpServer({ orchestrator, port });
+
+  const url = await mcp.listen(port);
+  console.log(`TheDelegator MCP server running at ${url}`);
+}
+
 /* ── entry ────────────────────────────────────────────────────────────────── */
 
 const [, , cmd, ...argv] = process.argv;
-const commands = { check: cmdCheck, status: cmdStatus, doctor: cmdDoctor, prompts: cmdPrompts, init: cmdInit };
+const commands = {
+  check: cmdCheck,
+  status: cmdStatus,
+  doctor: cmdDoctor,
+  prompts: cmdPrompts,
+  init: cmdInit,
+  chat: cmdChat,
+  loop: cmdLoop,
+  bridge: cmdBridge,
+  join: cmdJoin,
+  mcp: cmdMcp,
+};
 
 if (!cmd || cmd === "--help" || cmd === "-h") {
   console.log(`${C.bold("the delegator")} — coordination-free parallelism for AI coding agents
@@ -370,7 +506,14 @@ if (!cmd || cmd === "--help" || cmd === "-h") {
   ${C.cyan("delegator check")}      did this branch write outside its lane?  ${C.dim("(CI gate)")}
   ${C.cyan("delegator status")}     what moved, what is stuck
   ${C.cyan("delegator prompts")}    generate each agent's prompt from the manifest
+  ${C.cyan("delegator chat")}       start real-time multi-agent live chat & spectator console
+  ${C.cyan("delegator loop")}       run autonomous agent execution loop until goal completion
+  ${C.cyan("delegator join")}       auto-join IDE terminal session to the live chat
+  ${C.cyan("delegator mcp")}        launch Model Context Protocol (MCP) server for Cursor/Claude
 
+  ${C.dim("--goal=<text>    specify objective for chat / loop")}
+  ${C.dim("--port=<num>     web console port (default: 4141)")}
+  ${C.dim("--max-turns=<n>  safety turn limit for autonomous loop (default: 20)")}
   ${C.dim("--agent=<name>   override branch→agent detection")}
   ${C.dim("--base=<ref>     compare against something other than origin/<default>")}
   ${C.dim("--out=<dir>      write prompts to files instead of stdout")}
@@ -383,3 +526,4 @@ if (!commands[cmd]) {
   process.exit(2);
 }
 commands[cmd](argv);
+

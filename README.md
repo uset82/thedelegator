@@ -8,9 +8,11 @@
 **Run Claude, Codex, Cursor and Gemini on the same repository at the same time — without them
 destroying each other's work.**
 
-Zero dependencies. One JSON file. Four commands.
+Zero dependencies. One JSON file. Autonomous multi-agent coordination.
 
 ```bash
+npx thedelegator chat       # live multi-agent chat room & spectator web console
+npx thedelegator loop       # autonomous execution loop (Claude + builders) until goal completion
 npx thedelegator doctor     # is every agent actually able to work?
 npx thedelegator check      # did this branch write outside its lane?   ← CI gate
 npx thedelegator status     # what moved, what is stuck
@@ -85,6 +87,26 @@ STUCK
 
 That output is real, from the project this was built for. Nobody reported anything. An agent
 cannot forget to update something that is computed from what it actually did.
+
+---
+
+## Autonomous Multi-Agent Live Chat & Spectator Console
+
+Tired of copy-pasting back and forth between Claude (Architect) and Cursor / Codex (Builders)?
+
+The Delegator includes an **Autonomous Agent-to-Agent Bridge**:
+
+```bash
+# 1. Start the Live Multi-Agent Web Console (opens at http://localhost:4141)
+npx thedelegator chat
+
+# 2. Or run an autonomous mission directly from the CLI
+npx thedelegator loop --goal="Implement JWT auth middleware with unit tests"
+```
+
+- **Direct Model-to-Model Dialogue**: Claude assigns tasks, builders implement code in their worktrees, and Claude reviews diffs autonomously.
+- **Human-on-the-Loop Supervision**: Sit back and watch the conversation stream live in real time. Inject guidance, approve budget decisions, or pause at any moment.
+- **Automated Lane Gatekeeper**: `thedelegator check` runs after every builder turn to guarantee no unauthorized files are touched before review.
 
 ---
 

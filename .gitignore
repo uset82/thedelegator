@@ -5,3 +5,4 @@ prompts/
 .claude/settings.local.json
 
 thedelegator-*.tgz
+.delegator/
