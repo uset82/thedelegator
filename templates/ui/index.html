@@ -1586,7 +1586,7 @@ Ready. Waiting for first IDE / Agent to connect.
                 <span class="agent-name">${agent.title || name}</span>
                 <span class="agent-time">${agent.role || 'Active'}</span>
               </div>
-              <div class="agent-lane-snippet">${(agent.owns || []).join(", ") || 'In lane'}</div>
+              <div class="agent-preview">${agent.description || agent.preview || 'Online & ready'}</div>
             </div>
           `;
 
