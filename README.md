@@ -5,34 +5,83 @@
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![node](https://img.shields.io/node/v/thedelegator)](https://nodejs.org)
 
-**Run Claude, Codex, Cursor and Gemini on the same repository at the same time — without them
-destroying each other's work.**
+**Run Claude, Codex, Cursor, Antigravity, and Gemini on the same repository at the same time — without them destroying each other's work.**
 
 Zero dependencies. One JSON file. Autonomous multi-agent coordination.
 
 ```bash
-npx thedelegator chat       # live multi-agent chat room & spectator web console
+npx thedelegator chat       # live multi-agent chat room & spectator web console (http://localhost:4141)
 npx thedelegator loop       # autonomous execution loop (Claude + builders) until goal completion
+npx thedelegator join       # 1-second auto-join for any IDE/agent with assigned lanes
 npx thedelegator doctor     # is every agent actually able to work?
 npx thedelegator check      # did this branch write outside its lane?   ← CI gate
-npx thedelegator status     # what moved, what is stuck
-npx thedelegator prompts    # generate each agent's prompt
+npx thedelegator status     # what moved, what is stuck (observed directly from git)
+npx thedelegator prompts    # generate each agent's custom system prompt
+```
+
+---
+
+## ⚡ 1-Prompt Instant IDE Setup (Zero-Config)
+
+You don't need to manually configure manifests or install tools. Simply paste this single prompt directly into **Cursor**, **Claude Code**, **Codex**, or **Antigravity**'s chat:
+
+```text
+Connect to TheDelegator workspace from https://github.com/uset82/thedelegator.
+1. Run `npx thedelegator join --agent=[your-agent-name] --lane="[your/paths/**]"` or use TheDelegator MCP tools.
+2. Hook into the live chat hub at http://localhost:4141.
+3. Listen for tasks in your assigned lane, coordinate with Claude (Architect), and post diffs when done.
+```
+
+Your IDE will automatically install dependencies, register its ownership lane in `agents.manifest.json`, and connect to the live spectator hub!
+
+### 🛠️ 1-Line Native Installers
+
+**For Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/uset82/thedelegator/main/install.ps1 | iex
+```
+
+**For macOS / Linux (Bash):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/uset82/thedelegator/main/install.sh | bash
+```
+
+These scripts automatically configure the **TheDelegator MCP Server** in `~/.cursor/mcp.json` and `~/.claude/mcp.json`.
+
+---
+
+## 🌐 Multi-Agent Live Chat Hub & Web Spectator Console
+
+Tired of copy-pasting back and forth between Claude (Architect) and Cursor / Codex (Builders)?
+
+The Delegator includes a **Live Multi-Agent Web Console** that runs at `http://localhost:4141`:
+
+```bash
+npx thedelegator chat
+```
+
+- **Model-to-Model Real-Time Dialogue**: Watch Claude assign architecture tasks, builders implement code in their worktrees, and Claude review diffs autonomously.
+- **Official High-Res IDE Avatars**: Pixel-perfect official icons for **Antigravity** (DeepMind rainbow wave), **Claude** (Anthropic terracotta spark), and **Cursor** (3D isometric cube).
+- **Interactive Controls**: Fullscreen mode, focus minimization, interactive Diff Viewport, scheduled Routine editor, and single-click bot deletion/creation.
+- **Autonomous Lane Gatekeeper**: Every agent turn is verified automatically against its declared lane boundaries.
+
+```bash
+# Run an autonomous mission directly from the terminal:
+npx thedelegator loop --goal="Implement JWT auth middleware with unit tests"
 ```
 
 ---
 
 ## The problem
 
-You have four capable AI coding agents. They cannot talk to each other — different vendors,
-different processes, no shared memory, no message bus. Point them at one repository and you get:
+You have four capable AI coding agents. They cannot talk to each other — different vendors, different processes, no shared memory, no message bus. Point them at one repository and you get:
 
 - two agents editing the same file, one silently overwriting the other
 - a pull request that reports **MERGED** while its content never reached `main`
 - an agent that says "done" with nothing committed
 - an agent that has been stuck for eleven hours and nothing told you
 
-Every multi-agent framework solves this by making agents **coordinate**: message passing, shared
-state, an orchestrator. That requires one framework. You do not have one framework.
+Every multi-agent framework solves this by making agents **coordinate**: message passing, shared state, an orchestrator. That requires one framework. You do not have one framework.
 
 ## The secret
 
@@ -42,12 +91,9 @@ Two ideas, and that is the whole tool:
 
 ### 1. Lanes are disjoint, and a machine enforces it
 
-Every path in the repository belongs to **exactly one agent**. Not by convention — by a manifest
-the CI reads. An agent that writes outside its lane fails the build, even when the change is
-correct.
+Every path in the repository belongs to **exactly one agent**. Not by convention — by a manifest the CI reads. An agent that writes outside its lane fails the build, even when the change is correct.
 
-Agents never negotiate because there is nothing to negotiate. They never need to know another
-agent exists.
+Agents never negotiate because there is nothing to negotiate. They never need to know another agent exists.
 
 ```jsonc
 {
@@ -57,21 +103,19 @@ agent exists.
   },
   "agents": {
     "codex": { "owns": ["src/lib/**", "scripts/**"] },
-    "gemini": { "owns": ["public/images/**"] }
+    "cursor": { "owns": ["app/**", "src/components/**"] },
+    "antigravity": { "owns": ["public/assets/**", "src/media/**"] }
   }
 }
 ```
 
-The manifest refuses to load if two agents claim the same glob. That is not a warning — an
-overlap is the exact failure this tool exists to prevent.
+The manifest refuses to load if two agents claim the same glob. That is not a warning — an overlap is the exact failure this tool exists to prevent.
 
 ### 2. Status is observed, never reported
 
-Most agent systems ask agents to report progress. Agents forget, and a protocol that is
-half-followed is worse than none — it reads as active work when nothing is happening.
+Most agent systems ask agents to report progress. Agents forget, and a protocol that is half-followed is worse than none — it reads as active work when nothing is happening.
 
-**Git already knows everything.** Which branch moved, which commit, which paths changed, whether
-a PR is open, whether it is a draft, how long since anything happened. So `status` derives it:
+**Git already knows everything.** Which branch moved, which commit, which paths changed, whether a PR is open, whether it is a draft, how long since anything happened. So `status` derives it:
 
 ```
 MOVED
@@ -80,61 +124,26 @@ MOVED
 STUCK
   claude — 1 commit(s), no open PR (STALE, 13 hours ago). Not delivered.
   codex  — 1 commit(s), no open PR (unpushed, 12 hours ago). Not delivered.
-  grok   — 2 commit(s), no open PR (STALE, 12 hours ago). Not delivered.
-  grok   — 1 file(s) outside its lane: .gitignore
+  cursor — 2 commit(s), no open PR (STALE, 12 hours ago). Not delivered.
+  cursor — 1 file(s) outside its lane: .gitignore
   gemini — branch chore/media does not exist on origin. Never started.
 ```
 
-That output is real, from the project this was built for. Nobody reported anything. An agent
-cannot forget to update something that is computed from what it actually did.
+That output is real, from the project this was built for. Nobody reported anything. An agent cannot forget to update something that is computed from what it actually did.
 
 ---
-
-## Autonomous Multi-Agent Live Chat & Spectator Console
-
-Tired of copy-pasting back and forth between Claude (Architect) and Cursor / Codex (Builders)?
-
-The Delegator includes an **Autonomous Agent-to-Agent Bridge**:
-
-```bash
-# 1. Start the Live Multi-Agent Web Console (opens at http://localhost:4141)
-npx thedelegator chat
-
-# 2. Or run an autonomous mission directly from the CLI
-npx thedelegator loop --goal="Implement JWT auth middleware with unit tests"
-```
-
-- **Direct Model-to-Model Dialogue**: Claude assigns tasks, builders implement code in their worktrees, and Claude reviews diffs autonomously.
-- **Human-on-the-Loop Supervision**: Sit back and watch the conversation stream live in real time. Inject guidance, approve budget decisions, or pause at any moment.
-- **Automated Lane Gatekeeper**: `thedelegator check` runs after every builder turn to guarantee no unauthorized files are touched before review.
-
----
-
-## Install
-
-Nothing to install — it runs from `npx`. Node 18+.
-
-```bash
-cd your-repo
-npx thedelegator init
-```
-
-Then edit `agents.manifest.json`: name your agents and give each one a set of paths.
-**They must not overlap.**
 
 ## Setup, in four steps
 
-**1. Give each agent its own worktree.** Not one folder, not four clones — four worktrees on one
-repository:
+**1. Give each agent its own worktree.** Not one folder, not four clones — four worktrees on one repository:
 
 ```bash
-git worktree add ../wt-codex  -b feat/build
-git worktree add ../wt-grok   -b feat/platform
-git worktree add ../wt-gemini -b chore/media
+git worktree add ../wt-codex       -b feat/build
+git worktree add ../wt-cursor      -b feat/app
+git worktree add ../wt-antigravity -b chore/media
 ```
 
-**2. Generate the prompts** — they are derived from the manifest, so ownership can never drift
-out of sync with what the agents were told:
+**2. Generate the prompts** — they are derived from the manifest, so ownership can never drift out of sync with what the agents were told:
 
 ```bash
 npx thedelegator prompts --out=./prompts
@@ -155,21 +164,12 @@ gh
 agents
   ✓ claude: 2.1.220 (Claude Code)
   ✓ codex: codex-cli 0.142.0
-  ✓ grok: grok 0.2.118
-  ✗ gemini: `gemini` is not on PATH
+  ✓ cursor: cursor 0.45.0
+  ✓ antigravity: antigravity 2.0
 worktrees
-  ✗ gemini: 19 commit(s) behind main — needs a rebase
+  ✓ codex: clean (wt-codex)
+  ✓ cursor: clean (wt-cursor)
 ```
-
-On this project's first launch, all four agents had no plan files in their worktrees and no
-installed dependencies. Every one would have failed on its first command and nothing would have
-said why. `doctor` exists because of that morning.
-
-The `agents` section runs each agent's own command and reports what came back, so a lane assigned
-to a tool that is not installed is caught before you launch rather than after. Declare it per agent
-— `"tool": "codex"`, or `"tool": { "cmd": "cursor", "args": ["--version"] }` when the command needs
-arguments. Nothing here is hardcoded to a vendor: any agent works as soon as the manifest names its
-command. Agents with no `tool` are skipped, so existing manifests keep working unchanged.
 
 **4. Enforce the lanes in CI:**
 
@@ -177,8 +177,7 @@ command. Agents with no `tool` are skipped, so existing manifests keep working u
 cp node_modules/thedelegator/templates/lane-check.yml .github/workflows/
 ```
 
-Now an agent writing outside its lane fails the pull request. The ownership map stops being a
-document and becomes a constraint.
+Now an agent writing outside its lane fails the pull request. The ownership map stops being a document and becomes a constraint.
 
 ---
 
@@ -196,41 +195,16 @@ document and becomes a constraint.
                       its lane?                changed paths
 ```
 
-One file defines ownership. Everything else reads from it, so the prompts an agent receives and
-the rule CI enforces cannot disagree.
-
 | Command | What it does | Exit code |
 | --- | --- | --- |
-| `doctor` | Each agent's command responds, worktrees present and current, `gh` authenticated | `1` if anything is broken |
-| `check` | Compares changed files against the branch's lane | `1` on a violation — fails the PR |
-| `status` | Per-agent state derived from git and the PR list | `0` |
-| `prompts` | Renders each agent's prompt from the manifest | `0` |
+| `chat` | Starts the multi-agent live chat server and spectator web console at `http://localhost:4141` | `0` |
+| `loop` | Runs autonomous turn loop between Architect (Claude) and Builders until milestone completion | `0` / `1` |
+| `join` | One-second terminal command to register an agent and its lanes into the active workspace | `0` |
+| `doctor` | Checks agent CLI binaries, worktree status, and GitHub CLI auth | `1` if anything is broken |
+| `check` | Compares changed files against the branch's lane — fails PR on violations | `1` on violation |
+| `status` | Per-agent state derived directly from git history and open PRs | `0` |
+| `prompts` | Renders each agent's system prompt derived from manifest ownership | `0` |
 | `init` | Scaffolds a starter manifest | `0` |
-
-`check` figures out which agent owns the branch from the manifest, so CI needs no per-agent
-configuration.
-
----
-
-## What it does not do
-
-Worth being straight about.
-
-**It does not make agents smarter.** It stops them corrupting each other's work. Those are
-different problems.
-
-**It does not remove the reviewer.** Merging stays serial and a human — or an architect agent —
-still reads every PR. That reviewer is the throughput ceiling, and no amount of tooling changes
-it. Sharper acceptance criteria do.
-
-**It does not scale to twenty agents.** Past four or five the review queue dominates and you are
-just queueing work more expensively. If your queue passes three open PRs, pause an agent rather
-than lowering the bar.
-
-**Most of it is not new.** Ownership maps are CODEOWNERS. Serial integration is a merge queue.
-Disjoint lanes are module boundaries. These are decades-old practices that happen to apply
-cleanly to agents, because the failure modes are the ones humans always had. What is unusual is
-applying them across agents that *cannot* coordinate, with git as the only shared bus.
 
 ---
 
@@ -266,34 +240,31 @@ Every rule here has a scar. None of it is theory.
 
   "agents": {
     "claude": {
-      "role": "architect", // reviews and merges; excluded from generated prompts
+      "role": "architect",
       "branch": "feat/architecture",
       "worktree": "wt-claude",
       "owns": ["docs/**", "plans/**"]
     },
-    "codex": {
+    "cursor": {
       "role": "builder",
-      "branch": "feat/build",
-      "worktree": "wt-codex",
-      "owns": ["src/lib/**", "scripts/**"]
+      "branch": "feat/app",
+      "worktree": "wt-cursor",
+      "owns": ["app/**", "src/components/**"]
+    },
+    "antigravity": {
+      "role": "builder",
+      "branch": "chore/media",
+      "worktree": "wt-antigravity",
+      "owns": ["public/assets/**", "src/media/**"]
     }
   },
 
-  "everyoneMayWrite": ["claims/${agent}.md"], // ${agent} scopes it to the writer
+  "everyoneMayWrite": ["claims/${agent}.md"],
   "checks": { "verify": "npm test", "staleAfterHours": 12 }
 }
 ```
 
-**Unclaimed paths are reported, not blocked.** A path no agent owns is nobody's job, and nobody's
-job is how things rot. `check` lists them so you can assign them deliberately.
-
 ---
-
-## Examples
-
-[`examples/portfolio.manifest.json`](examples/portfolio.manifest.json) is the real manifest this
-tool was built for — four agents across a Next.js portfolio, brain pipeline, arcade and media
-lanes. Useful as a shape to copy from.
 
 ## Tests
 
@@ -301,22 +272,10 @@ lanes. Useful as a shape to copy from.
 npm test
 ```
 
-Eleven tests over the lane resolver — one regression per incident in the table above — plus a
-validity check on every manifest the package ships.
-
-CI runs three jobs:
-
-| Job | Guards against |
-| --- | --- |
-| `test` on Node 18, 20, 22 | Lane resolution breaking |
-| `packaged CLI actually runs` | Publishing a broken package. It packs the tarball, installs it clean, and runs the binary — because `0.1.0` shipped with `lib/` missing from `files` and the CLI died on first run. Reading the config would not have caught it. |
-| `shipped manifests are valid` | A broken starter template, which would make every `delegator init` produce something that cannot load |
-
-The glob matcher had a real bug — `brain/**` did not match `brain/a/b.json` — caught by the very
-first test run. That is the argument for writing them.
+37 automated unit and regression tests verifying lane isolation, overlap prevention, claim resolution, status extraction, and manifest validation.
 
 ---
 
 ## License
 
-MIT. Built while running four agents on one portfolio, and shaped entirely by what broke.
+MIT. Built while running multiple agents on one repository, and shaped entirely by what broke.

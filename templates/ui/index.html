@@ -227,6 +227,23 @@
     .squircle-antigravity { background: #0f1015 !important; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 10px rgba(56, 189, 248, 0.25); }
     .squircle-claude { background: #1c1310 !important; border: 1px solid rgba(217, 119, 87, 0.35) !important; box-shadow: 0 0 10px rgba(217, 119, 87, 0.25); }
     .squircle-cursor { background: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.4) !important; box-shadow: 0 0 10px rgba(255, 255, 255, 0.15); }
+    .btn-connect-ide-quick {
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      color: #fff;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .btn-connect-ide-quick:hover {
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
 
     .agent-info {
       flex: 1;
@@ -923,8 +940,11 @@
 
     <!-- Popup Dropdown Menu -->
     <div class="dropdown-menu" id="dropdown-menu">
+      <div class="dropdown-item" id="menu-auto-connect" onclick="openConnectModal()">
+        <span>⚡</span> <span>1-Prompt Auto-Connect IDE</span>
+      </div>
       <div class="dropdown-item" id="menu-new-bot">
-        <span>🤖</span> <span>New Bot / IDE</span>
+        <span>🤖</span> <span>Manual Bot Form</span>
       </div>
       <div class="dropdown-item" id="menu-new-channel">
         <span>#</span> <span>New Channel</span>
@@ -1090,6 +1110,45 @@ Ready. Waiting for first IDE / Agent to connect.
       </button>
     </div>
   </aside>
+
+  <!-- MODAL: 1-PROMPT AUTO-CONNECT -->
+  <div class="modal-overlay" id="connect-modal">
+    <div class="modal-card" style="width: 520px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:20px;">⚡</span>
+          <h3>1-Prompt Instant IDE Setup</h3>
+        </div>
+        <span style="cursor:pointer; color:var(--text-sub);" onclick="closeModal('connect-modal')">✕</span>
+      </div>
+
+      <p style="font-size:13px; color:var(--text-sub); line-height:1.5;">
+        Give this single prompt to <strong>Cursor</strong>, <strong>Claude Code</strong>, <strong>Codex</strong>, or <strong>Antigravity</strong> in their chat window. The IDE will automatically install dependencies, configure its lane, and connect to this chat room!
+      </p>
+
+      <div style="background:#09090b; border:1px solid var(--border-color); border-radius:10px; padding:12px; position:relative;">
+        <pre style="font-family:'JetBrains Mono', monospace; font-size:12px; color:#38bdf8; white-space:pre-wrap; word-break:break-all; margin:0;" id="prompt-text">Connect to TheDelegator workspace from https://github.com/uset82/thedelegator.
+1. Run `npx thedelegator join --agent=[your-agent-name] --lane="[your/paths/**]"` or use TheDelegator MCP tools.
+2. Hook into the live chat hub at http://localhost:4141.
+3. Listen for tasks in your assigned lane, coordinate with Claude (Architect), and post diffs when done.</pre>
+        <button id="btn-copy-prompt" onclick="copyAgentPrompt()" style="margin-top:10px; width:100%; background:#2563eb; color:#fff; border:none; padding:8px; border-radius:8px; font-weight:700; font-size:12.5px; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:6px;">
+          <span>📋</span> <span id="btn-copy-prompt-text">Copy Prompt to Clipboard</span>
+        </button>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
+        <div style="font-size:12px; font-weight:700; color:var(--text-main);">Or Run 1-Line Installer:</div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-plugin-action" style="flex:1; padding:7px;" onclick="navigator.clipboard.writeText('irm https://raw.githubusercontent.com/uset82/thedelegator/main/install.ps1 | iex'); this.textContent='Copied PowerShell! ✓'">📋 Copy PowerShell (Win)</button>
+          <button class="btn-plugin-action" style="flex:1; padding:7px;" onclick="navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/uset82/thedelegator/main/install.sh | bash'); this.textContent='Copied Bash! ✓'">📋 Copy Bash (Mac/Linux)</button>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-modal btn-modal-primary" onclick="closeModal('connect-modal')">Done</button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL: ADD BOT / IDE -->
   <div class="modal-overlay" id="add-modal">
@@ -1571,8 +1630,11 @@ Ready. Waiting for first IDE / Agent to connect.
           const emptyBox = document.createElement("div");
           emptyBox.className = "empty-agents-box";
           emptyBox.innerHTML = `
-            No IDEs connected yet.<br>
-            <span style="color:#38bdf8; font-weight:600;">Click +</span> or run <span class="pill-gray">delegator join</span> in Cursor / Claude
+            <div style="margin-bottom:8px; font-weight:700; color:#fff;">No IDEs connected yet</div>
+            <button class="btn-connect-ide-quick" onclick="openConnectModal()">⚡ 1-Prompt Connect</button>
+            <div style="font-size:11px; color:#71717a; margin-top:8px; line-height:1.4;">
+              Give prompt to Cursor / Claude / Antigravity to auto-install & join
+            </div>
           `;
           agentsList.appendChild(emptyBox);
           return;
@@ -1775,6 +1837,20 @@ Ready. Waiting for first IDE / Agent to connect.
         }
       } catch (err) {}
     };
+
+    function openConnectModal() {
+      openModal("connect-modal");
+    }
+
+    function copyAgentPrompt() {
+      const text = document.getElementById("prompt-text").textContent;
+      navigator.clipboard.writeText(text);
+      const btnText = document.getElementById("btn-copy-prompt-text");
+      btnText.textContent = "Copied Prompt to Clipboard! ✓";
+      setTimeout(() => {
+        btnText.textContent = "Copy Prompt to Clipboard";
+      }, 2000);
+    }
 
     // Initial load
     loadAgents();
