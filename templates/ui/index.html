@@ -224,6 +224,7 @@
     .squircle-yellow { background: #ca8a04; color: #fff; }
     .squircle-white  { background: #e4e4e7; color: #000; }
     .squircle-warroom{ background: linear-gradient(135deg, #ea580c, #2563eb); color: #fff; }
+    .squircle-antigravity { background: #0f1015 !important; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 10px rgba(56, 189, 248, 0.25); }
 
     .agent-info {
       flex: 1;
@@ -1513,6 +1514,24 @@ Ready. Waiting for first IDE / Agent to connect.
       }
     }
 
+    const ANTIGRAVITY_ICON_SVG = (size = 22) => `
+<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:${size}px; height:${size}px; display:block;">
+  <defs>
+    <linearGradient id="agyGrad_${size}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4438"/>
+      <stop offset="25%" stop-color="#ff9900"/>
+      <stop offset="50%" stop-color="#10b981"/>
+      <stop offset="75%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <filter id="agyGlow_${size}" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="1.2" flood-color="#38bdf8" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+  <path d="M 6 25.5 C 7.5 17, 11 6.5, 16 6.5 C 21 6.5, 24.5 17, 26 25.5 C 22.8 23.2, 19.5 13, 16 13 C 12.5 13, 9.2 23.2, 6 25.5 Z" fill="url(#agyGrad_${size})" filter="url(#agyGlow_${size})" />
+</svg>
+`;
+
     async function loadAgents() {
       try {
         const res = await fetch("/api/agents");
@@ -1569,18 +1588,23 @@ Ready. Waiting for first IDE / Agent to connect.
           row.className = `agent-row ${currentAgent === name ? "active" : ""}`;
           
           let colorClass = `squircle-${agent.color || "orange"}`;
-          if (name.includes("codex")) colorClass = "squircle-green";
-          else if (name.includes("cursor")) colorClass = "squircle-blue";
-          else if (name.includes("antigravity")) colorClass = "squircle-purple";
+          let iconHtml = agent.icon || "💻";
 
-          let iconStr = agent.icon || "💻";
-          if (name.includes("claude")) iconStr = "👑";
-          else if (name.includes("codex")) iconStr = "⚡";
-          else if (name.includes("cursor")) iconStr = "💻";
-          else if (name.includes("antigravity") || name.includes("gemini")) iconStr = "🔮";
+          if (name.includes("antigravity")) {
+            colorClass = "squircle-antigravity";
+            iconHtml = ANTIGRAVITY_ICON_SVG(22);
+          } else if (name.includes("claude")) {
+            iconHtml = "👑";
+          } else if (name.includes("codex")) {
+            colorClass = "squircle-green";
+            iconHtml = "⚡";
+          } else if (name.includes("cursor")) {
+            colorClass = "squircle-blue";
+            iconHtml = "💻";
+          }
 
           row.innerHTML = `
-            <div class="agent-squircle ${colorClass}">${iconStr}</div>
+            <div class="agent-squircle ${colorClass}">${iconHtml}</div>
             <div class="agent-info">
               <div class="agent-header-line">
                 <span class="agent-name">${agent.title || name}</span>
@@ -1590,7 +1614,7 @@ Ready. Waiting for first IDE / Agent to connect.
             </div>
           `;
 
-          row.addEventListener("click", () => selectAgent(name, { ...agent, icon: iconStr }));
+          row.addEventListener("click", () => selectAgent(name, { ...agent, icon: iconHtml }));
 
           // Right click context menu
           row.addEventListener("contextmenu", (e) => {
@@ -1618,16 +1642,23 @@ Ready. Waiting for first IDE / Agent to connect.
       screenLabel.textContent = `${title}'s screen`;
       chatInput.placeholder = `Message ${title}...`;
 
-      activeIcon.textContent = agent.icon || (name === "warroom" ? "🏛️" : (name.includes("claude") ? "👑" : "💻"));
-      activeIcon.className = `active-icon squircle-${agent.color || (name === "warroom" ? "warroom" : "orange")}`;
+      if (name.includes("antigravity")) {
+        activeIcon.innerHTML = ANTIGRAVITY_ICON_SVG(18);
+        activeIcon.className = "active-icon squircle-antigravity";
+        document.getElementById("settings-avatar-icon").innerHTML = ANTIGRAVITY_ICON_SVG(38);
+        document.getElementById("settings-avatar-icon").className = "settings-avatar squircle-antigravity";
+      } else {
+        activeIcon.innerHTML = agent.icon || (name === "warroom" ? "🏛️" : (name.includes("claude") ? "👑" : "💻"));
+        activeIcon.className = `active-icon squircle-${agent.color || (name === "warroom" ? "warroom" : "orange")}`;
+        document.getElementById("settings-avatar-icon").innerHTML = activeIcon.innerHTML;
+        document.getElementById("settings-avatar-icon").className = `settings-avatar squircle-${agent.color || (name === "warroom" ? "warroom" : "blue")}`;
+      }
 
       // Update settings view inputs
       document.getElementById("settings-agent-name").value = title;
       document.getElementById("settings-agent-role").value = agent.role || (name === "warroom" ? "architect" : "builder");
       document.getElementById("settings-agent-branch").value = agent.branch || `feat/${name}`;
       document.getElementById("settings-agent-lanes").value = (agent.owns || []).join(", ") || "src/**";
-      document.getElementById("settings-avatar-icon").textContent = activeIcon.textContent;
-      document.getElementById("settings-avatar-icon").className = `settings-avatar squircle-${agent.color || (name === "warroom" ? "warroom" : "blue")}`;
 
       document.getElementById("btn-delete-from-settings").style.display = name === "warroom" ? "none" : "flex";
       document.getElementById("btn-save-settings").style.display = name === "warroom" ? "none" : "block";
