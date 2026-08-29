@@ -26,6 +26,18 @@
       "title": "Antigravity IDE",
       "color": "purple",
       "icon": "🔮"
+    },
+    "claude": {
+      "role": "architect",
+      "branch": "main",
+      "owns": [
+        "taskplan.md",
+        "docs/**",
+        "HANDOFF.md"
+      ],
+      "title": "claude IDE Agent",
+      "color": "blue",
+      "icon": "🤖"
     }
   },
   "everyoneMayWrite": [
