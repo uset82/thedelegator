@@ -228,6 +228,7 @@
     .squircle-antigravity { background: #0f1015 !important; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 10px rgba(56, 189, 248, 0.25); }
     .squircle-claude { background: #1c1310 !important; border: 1px solid rgba(217, 119, 87, 0.35) !important; box-shadow: 0 0 10px rgba(217, 119, 87, 0.25); }
     .squircle-cursor { background: #000000 !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; box-shadow: 0 0 10px rgba(255, 255, 255, 0.15); }
+    .squircle-grok { background: #000000 !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; box-shadow: 0 0 10px rgba(255, 255, 255, 0.15); }
     .btn-connect-ide-quick {
       background: linear-gradient(135deg, #3b82f6, #06b6d4);
       color: #fff;
@@ -1649,6 +1650,10 @@ Ready. Waiting for first IDE / Agent to connect.
 <img src="/cursor.png" alt="Cursor" style="width:${size}px; height:${size}px; object-fit:contain; display:block; margin:auto;" />
 `;
 
+    const GROK_ICON_SVG = (size = 28) => `
+<img src="/grok.png" alt="Grok" style="width:${size}px; height:${size}px; object-fit:contain; display:block; margin:auto;" />
+`;
+
     async function loadAgents() {
       try {
         const res = await fetch("/api/agents");
@@ -1720,6 +1725,9 @@ Ready. Waiting for first IDE / Agent to connect.
           } else if (key.includes("cursor")) {
             colorClass = "squircle-cursor";
             iconHtml = CURSOR_ICON_SVG(28);
+          } else if (key.includes("grok")) {
+            colorClass = "squircle-grok";
+            iconHtml = GROK_ICON_SVG(28);
           } else if (key.includes("codex")) {
             colorClass = "squircle-green";
             iconHtml = "⚡";
@@ -1780,6 +1788,11 @@ Ready. Waiting for first IDE / Agent to connect.
         activeIcon.className = "active-icon squircle-cursor";
         document.getElementById("settings-avatar-icon").innerHTML = CURSOR_ICON_SVG(46);
         document.getElementById("settings-avatar-icon").className = "settings-avatar squircle-cursor";
+      } else if (key.includes("grok")) {
+        activeIcon.innerHTML = GROK_ICON_SVG(24);
+        activeIcon.className = "active-icon squircle-grok";
+        document.getElementById("settings-avatar-icon").innerHTML = GROK_ICON_SVG(46);
+        document.getElementById("settings-avatar-icon").className = "settings-avatar squircle-grok";
       } else {
         activeIcon.innerHTML = agent.icon || (name === "warroom" ? "🏛️" : "💻");
         activeIcon.className = `active-icon squircle-${agent.color || (name === "warroom" ? "warroom" : "orange")}`;
