@@ -4,8 +4,8 @@
   "defaultBranch": "main",
   "worktreeRoot": "..",
   "shared": {
-    "owner": "architect",
-    "reason": "Touched by almost every task. One owner prevents a conflict on every merge.",
+    "owner": "antigravity",
+    "reason": "Touched by almost every task. One owner prevents a conflict on every merge. This is an agent name, not a role: the orchestrator reads it to find the architect.",
     "paths": [
       "package.json",
       "**/package.json",
@@ -20,24 +20,23 @@
       "branch": "feat/antigravity",
       "owns": [
         "lib/**",
-        "templates/**",
-        "app/**"
+        "templates/**"
       ],
       "title": "Antigravity IDE",
       "color": "purple",
       "icon": "🔮"
     },
     "claude": {
-      "role": "architect",
+      "role": "builder",
       "branch": "main",
       "owns": [
-        "taskplan.md",
-        "docs/**",
-        "HANDOFF.md"
+        "bin/**",
+        "README.md",
+        "CONNECT.md"
       ],
-      "title": "claude IDE Agent",
-      "color": "blue",
-      "icon": "🤖"
+      "title": "Claude — CLI and docs",
+      "color": "orange",
+      "icon": "◈"
     }
   },
   "everyoneMayWrite": [
