@@ -452,11 +452,6 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* One agent, one colour, all the way down the log. */
-    .chat-bubble.agent-msg {
-      border-left: 2px solid var(--accent, transparent);
-    }
-
     .chat-bubble ul {
       margin: 6px 0 6px 0;
       padding-left: 20px;
@@ -474,7 +469,13 @@
     .chat-empty {
       color: #6b7280;
       font-size: 13px;
-      padding: 18px 4px;
+      line-height: 1.7;
+      padding: 22px 4px;
+    }
+
+    .chat-empty strong {
+      color: #9ca3af;
+      font-weight: 600;
     }
 
     .chat-bubble {
@@ -496,6 +497,8 @@
 
     .chat-bubble.agent-msg {
       align-self: flex-start;
+      /* One agent, one colour, all the way down the log. */
+      border-left: 2px solid var(--accent, transparent);
     }
 
     .chat-bubble.user-msg {
@@ -1818,16 +1821,20 @@ Ready. Waiting for first IDE / Agent to connect.
         ? new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         : "";
 
-      let from = "";
-      if (msg.sender && !sender.includes("human")) {
-        from =
-          '<div class="msg-from">' +
-          '<span class="msg-icon">' + ((meta && meta.icon) || "•") + '</span>' +
-          '<span class="msg-name">' + String(msg.sender).toUpperCase() + '</span>' +
+      // Everyone gets a name. The human was the only speaker whose messages
+      // arrived anonymous, which made a supervisor instruction look like an
+      // unattributed note.
+      const isHuman = sender.includes("human") || sender.includes("user");
+      const label = isHuman ? "YOU" : String(msg.sender || "").toUpperCase();
+      const icon = isHuman ? "◆" : ((meta && meta.icon) || "•");
+      const from = label
+        ? '<div class="msg-from">' +
+          '<span class="msg-icon">' + icon + '</span>' +
+          '<span class="msg-name">' + label + '</span>' +
           (msg.role ? '<span class="msg-role">' + msg.role + '</span>' : '') +
           (time ? '<span class="msg-time">' + time + '</span>' : '') +
-          '</div>';
-      }
+          '</div>'
+        : "";
       bubble.innerHTML = from + formatContent(msg.content);
       chatMessages.appendChild(bubble);
       chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -1940,10 +1947,10 @@ Ready. Waiting for first IDE / Agent to connect.
         if (!shown.length) {
           const empty = document.createElement("div");
           empty.className = "chat-empty";
-          empty.textContent =
+          empty.innerHTML =
             currentAgent === "warroom"
-              ? "No messages yet."
-              : "Nothing addressed to this agent yet. Broadcasts live in the War Room.";
+              ? "<strong>War Room</strong><br>Every agent posts here. Direct traffic shows in each agent's own channel."
+              : "Nothing addressed to this agent yet.<br>Broadcasts live in the War Room.";
           chatMessages.appendChild(empty);
           return;
         }
