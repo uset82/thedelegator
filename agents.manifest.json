@@ -27,16 +27,16 @@
       "icon": "🔮"
     },
     "claude": {
-      "role": "builder",
-      "branch": "main",
+      "role": "architect",
+      "branch": "feat/claude",
       "owns": [
-        "bin/**",
-        "README.md",
-        "CONNECT.md"
+        "taskplan.md",
+        "docs/**",
+        "HANDOFF.md"
       ],
-      "title": "Claude — CLI and docs",
-      "color": "orange",
-      "icon": "◈"
+      "title": "claude IDE Agent",
+      "color": "blue",
+      "icon": "🤖"
     }
   },
   "everyoneMayWrite": [

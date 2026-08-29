@@ -514,7 +514,10 @@ async function ensureHub(url) {
 async function cmdJoin(argv) {
   const agentName = argv.find((a) => a.startsWith("--agent=") || a.startsWith("--name="))?.split("=")[1] || "cursor";
   const role = argv.find((a) => a.startsWith("--role="))?.split("=")[1] || "builder";
-  const branch = argv.find((a) => a.startsWith("--branch="))?.split("=")[1] || `feat/${agentName}`;
+  // Only pass a branch when one was actually asked for. Sending a made-up
+  // default made every re-join look like a deliberate change and clobbered
+  // whatever the manifest already said.
+  const branch = argv.find((a) => a.startsWith("--branch="))?.split("=")[1];
   const owns = argv.find((a) => a.startsWith("--owns=") || a.startsWith("--lane="))?.split("=")[1] || `src/${agentName}/**`;
   const url = argv.find((a) => a.startsWith("--url="))?.split("=")[1] || "http://localhost:4141";
 
