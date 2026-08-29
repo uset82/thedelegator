@@ -11,11 +11,12 @@
  *   delegator init      scaffold a manifest and the worktrees
  */
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { findViolations, assertDisjoint } from "../lib/lanes.mjs";
+import { probeAgents } from "../lib/tools.mjs";
 import { createAutoOrchestrator } from "../lib/orchestrator.mjs";
 import { createBridgeServer } from "../lib/server.mjs";
 import { joinChatRoom } from "../lib/client.mjs";
@@ -316,7 +317,12 @@ function cmdPrompts(argv) {
       chain.replaceAll("${architect}", architect).trim(),
       "",
       `You are ${name} — ${a.title}.`,
-      `Work in ../${a.worktree} on branch ${a.branch}. Never in the main checkout.`,
+      // A team can share one checkout and rely on lanes instead of worktrees.
+      // Printing "work in ../. and never in the main checkout" told them to go
+      // to the directory they were already standing in, and then not to.
+      a.worktree && a.worktree !== "."
+        ? `Work in ${join(m.worktreeRoot ?? "..", a.worktree)} on branch ${a.branch}. Never in the main checkout.`
+        : `Work in the checkout on branch ${a.branch}. Your lane, not a worktree, is what keeps you out of everyone else's way.`,
       "",
       "YOU OWN (write freely):",
       lane,
@@ -459,6 +465,52 @@ async function cmdBridge(argv) {
   console.log(`TheDelegator bridge daemon running at ${url}`);
 }
 
+/**
+ * Is a hub already listening, and can we start one if not?
+ *
+ * `join` used to fail outright when nothing was serving 4141, which made the
+ * documented one-prompt setup untrue: an IDE pasted the prompt into a clean
+ * machine and got a connection error, because the instructions never said
+ * somebody has to run `chat` first. The first agent to arrive now opens the
+ * room instead of finding the door locked.
+ */
+async function ensureHub(url) {
+  const reachable = async () => {
+    try {
+      const res = await fetch(url + "/api/agents", { signal: AbortSignal.timeout(1500) });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  };
+
+  if (await reachable()) return true;
+
+  const local = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(url);
+  if (!local) {
+    console.error(C.red(`No hub at ${url}, and it is not local, so I will not start one.`));
+    return false;
+  }
+
+  const port = Number(new URL(url).port || 4141);
+  console.log(C.dim(`No hub on ${port} yet — starting one.`));
+  const child = spawn(process.execPath, [fileURLToPath(import.meta.url), "chat", `--port=${port}`], {
+    detached: true,
+    stdio: "ignore",
+  });
+  child.unref();
+
+  for (let i = 0; i < 40; i++) {
+    await new Promise((r) => setTimeout(r, 250));
+    if (await reachable()) {
+      console.log(C.green(`Hub is up at ${url}`));
+      return true;
+    }
+  }
+  console.error(C.red(`Started a hub but it never answered on ${port}.`));
+  return false;
+}
+
 async function cmdJoin(argv) {
   const agentName = argv.find((a) => a.startsWith("--agent=") || a.startsWith("--name="))?.split("=")[1] || "cursor";
   const role = argv.find((a) => a.startsWith("--role="))?.split("=")[1] || "builder";
@@ -466,6 +518,7 @@ async function cmdJoin(argv) {
   const owns = argv.find((a) => a.startsWith("--owns=") || a.startsWith("--lane="))?.split("=")[1] || `src/${agentName}/**`;
   const url = argv.find((a) => a.startsWith("--url="))?.split("=")[1] || "http://localhost:4141";
 
+  if (!(await ensureHub(url))) process.exit(1);
   await joinChatRoom({ agentName, role, branch, owns, serverUrl: url });
 }
 

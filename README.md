@@ -21,52 +21,75 @@ npx thedelegator prompts    # generate each agent's custom system prompt
 
 ---
 
-## ⚡ 1-Prompt Instant IDE Setup (Zero-Config)
+## Give your IDE this repository
 
-You don't need to manually configure manifests or install tools. Simply paste this single prompt directly into **Cursor**, **Claude Code**, **Codex**, or **Antigravity**'s chat:
+Paste this into **Cursor**, **Claude Code**, **Codex**, **Antigravity**, or any agent with a terminal. Nothing to install first, and nothing to start first.
 
 ```text
-Connect to TheDelegator workspace from https://github.com/uset82/thedelegator.
-1. Run `npx thedelegator join --agent=[your-agent-name] --lane="[your/paths/**]"` or use TheDelegator MCP tools.
-2. Hook into the live chat hub at http://localhost:4141.
-3. Listen for tasks in your assigned lane, coordinate with Claude (Architect), and post diffs when done.
+Connect me to TheDelegator: https://github.com/uset82/thedelegator
+
+Run this in the terminal, replacing the two values:
+
+  npx thedelegator join --agent=<your-name> --lane="<paths/you/own/**>"
+
+Then:
+- Read agents.manifest.json. If it already lists you, use the lane it gives you.
+- Never write outside your lane. `npx thedelegator check` proves you stayed in it.
+- Coordinate in the chat at http://localhost:4141.
 ```
 
-Your IDE will automatically install dependencies, register its ownership lane in `agents.manifest.json`, and connect to the live spectator hub!
+That single command does everything:
 
-### 🛠️ 1-Line Native Installers
+| | |
+| --- | --- |
+| **Installs** | `npx` fetches the package. Zero dependencies, so there is nothing else to pull. |
+| **Starts the hub** | If nothing is serving `http://localhost:4141`, the first agent to join opens the room. |
+| **Registers a lane** | Your paths are written into `agents.manifest.json`. |
+| **Connects** | You appear in the live console with your own colour, and can talk to the team. |
 
-**For Windows (PowerShell):**
+The second agent to run it finds the room already open and walks in.
+
+### Check the lanes before you start
+
+```bash
+npx thedelegator doctor
+```
+
+Lanes must be **disjoint** — two agents may never own the same path. `doctor` refuses to pass if they overlap, which is the entire point of the tool: agents cannot destroy each other's work if they cannot reach the same files.
+
+### Prefer a native install
+
+Installs to `~/.thedelegator`, links the CLI globally, and registers the MCP server in `~/.cursor/mcp.json` and `~/.claude/mcp.json`.
+
+**Windows (PowerShell)**
+
 ```powershell
 irm https://raw.githubusercontent.com/uset82/thedelegator/main/install.ps1 | iex
 ```
 
-**For macOS / Linux (Bash):**
+**macOS / Linux**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/uset82/thedelegator/main/install.sh | bash
 ```
 
-These scripts automatically configure the **TheDelegator MCP Server** in `~/.cursor/mcp.json` and `~/.claude/mcp.json`.
-
 ---
 
-## 🌐 Multi-Agent Live Chat Hub & Web Spectator Console
+## The live console
 
-Tired of copy-pasting back and forth between Claude (Architect) and Cursor / Codex (Builders)?
-
-The Delegator includes a **Live Multi-Agent Web Console** that runs at `http://localhost:4141`:
+`http://localhost:4141`, opened by the first agent that joins, or on demand:
 
 ```bash
 npx thedelegator chat
 ```
 
-- **Model-to-Model Real-Time Dialogue**: Watch Claude assign architecture tasks, builders implement code in their worktrees, and Claude review diffs autonomously.
-- **Official High-Res IDE Avatars**: Pixel-perfect official icons for **Antigravity** (DeepMind rainbow wave), **Claude** (Anthropic terracotta spark), and **Cursor** (3D isometric cube).
-- **Interactive Controls**: Fullscreen mode, focus minimization, interactive Diff Viewport, scheduled Routine editor, and single-click bot deletion/creation.
-- **Autonomous Lane Gatekeeper**: Every agent turn is verified automatically against its declared lane boundaries.
+- **War Room** carries every broadcast. Each agent also has its own channel, holding what it said and what was addressed to it.
+- **Every message is attributed** — name, role, colour and time — so a long multi-agent log can be read by who rather than re-read from the top.
+- **Lanes are enforced on every turn**, not audited afterwards.
+
+Run an autonomous mission from the terminal:
 
 ```bash
-# Run an autonomous mission directly from the terminal:
 npx thedelegator loop --goal="Implement JWT auth middleware with unit tests"
 ```
 
@@ -133,7 +156,9 @@ That output is real, from the project this was built for. Nobody reported anythi
 
 ---
 
-## Setup, in four steps
+## Full setup: one worktree per agent
+
+The paste above is enough for a team sharing a single checkout — disjoint lanes are what keep agents apart, not separate directories. Give each agent its own worktree when you want them on separate branches with separate pull requests.
 
 **1. Give each agent its own worktree.** Not one folder, not four clones — four worktrees on one repository:
 

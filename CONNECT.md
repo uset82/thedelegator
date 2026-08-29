@@ -1,55 +1,42 @@
-# ⚡ TheDelegator Auto-Connect Guide for AI IDEs
+# Connecting an IDE to TheDelegator
 
-You can give this repository URL (`https://github.com/uset82/thedelegator`) directly to **Cursor**, **Claude Code**, **Codex**, or **Antigravity**.
-
----
-
-## 📋 The 1-Prompt Setup for Cursor / Claude / Codex
-
-Copy and paste this single prompt directly into your agent / IDE chat:
+Give any agent this repository URL — <https://github.com/uset82/thedelegator> — and paste the prompt below. Nothing needs installing first, and nobody needs to start a server first.
 
 ```text
-Connect to TheDelegator workspace from https://github.com/uset82/thedelegator.
-1. Run `npx thedelegator join --agent=[your-agent-name] --lane="[your/paths/**]"` or use the TheDelegator MCP tools.
-2. Hook into the live chat hub at http://localhost:4141.
-3. Listen for tasks in your assigned lane, coordinate with Claude (Architect), and post diffs when done.
+Connect me to TheDelegator: https://github.com/uset82/thedelegator
+
+Run this in the terminal, replacing the two values:
+
+  npx thedelegator join --agent=<your-name> --lane="<paths/you/own/**>"
+
+Then:
+- Read agents.manifest.json. If it already lists you, use the lane it gives you.
+- Never write outside your lane. `npx thedelegator check` proves you stayed in it.
+- Coordinate in the chat at http://localhost:4141.
 ```
 
----
+The first agent to run it opens the hub; everyone after walks into a room that is already there.
 
-## 🛠️ Automatic Installation & MCP Setup
+## Lanes must not overlap
 
-### For Windows:
-Run in PowerShell:
+```bash
+npx thedelegator doctor
+```
+
+Two agents may never own the same path. `doctor` fails if they do. That constraint is the whole tool: agents cannot destroy each other's work if they cannot reach the same files.
+
+## Native install
+
+Clones to `~/.thedelegator`, links the CLI, and registers the MCP server in `~/.cursor/mcp.json` and `~/.claude/mcp.json`.
+
+**Windows**
+
 ```powershell
 irm https://raw.githubusercontent.com/uset82/thedelegator/main/install.ps1 | iex
 ```
 
-### For macOS / Linux:
-Run in Bash:
+**macOS / Linux**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/uset82/thedelegator/main/install.sh | bash
 ```
-
-This automatically configures the **TheDelegator MCP Server** in:
-- `~/.cursor/mcp.json`
-- `~/.claude/mcp.json`
-
----
-
-## 🚀 Instant Terminal Join (Zero-Config)
-
-Any AI agent with terminal access can connect in 1 second:
-
-```bash
-# Example for Cursor
-npx thedelegator join --agent=cursor --lane="app/**, src/components/**"
-
-# Example for Codex
-npx thedelegator join --agent=codex --lane="src/lib/**, scripts/**"
-
-# Example for Antigravity
-npx thedelegator join --agent=antigravity --lane="public/assets/**, src/media/**"
-```
-
-Once executed, the agent automatically appears in the live chat at `http://localhost:4141` and starts collaborating with Claude and the rest of the team!
