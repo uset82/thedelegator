@@ -419,6 +419,34 @@
       gap: 16px;
     }
 
+    .msg-from {
+      font-size: 11px;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+
+    .msg-role {
+      color: #6b7280;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .chat-bubble ul {
+      margin: 6px 0 6px 0;
+      padding-left: 20px;
+    }
+
+    .chat-bubble li {
+      margin: 3px 0;
+    }
+
+    .msg-gap {
+      display: block;
+      height: 8px;
+    }
+
     .chat-bubble {
       background: var(--bg-bubble);
       border-radius: 18px;
@@ -1747,17 +1775,65 @@ Ready. Waiting for first IDE / Agent to connect.
         bubble.className = "chat-bubble agent-msg";
       }
 
-      bubble.innerHTML = formatContent(msg.content);
+      // Who is speaking. Without this every agent is an identical grey bubble
+      // and the only cue is a "[NAME]" prefix the sender had to type by hand.
+      const from = msg.sender && !sender.includes("human")
+        ? '<div class="msg-from">' + String(msg.sender).toUpperCase() +
+          (msg.role ? ' <span class="msg-role">' + msg.role + '</span>' : '') + '</div>'
+        : '';
+      bubble.innerHTML = from + formatContent(msg.content);
       chatMessages.appendChild(bubble);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     function formatContent(text) {
       if (!text) return "";
-      return text
-        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/`([^`]+)`/g, '<span class="pill-gray">$1</span>');
+
+      // 1. Escape first. Everything after this point is our own markup.
+      var out = String(text)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      // 2. Lift inline code out before any inline formatting runs.
+      //    Agents talk in globs — `components/**`, `lib/**` — and a bold pass
+      //    that sees those asterisks pairs them across the sentence and bolds
+      //    whatever happens to sit between two lanes.
+      var code = [];
+      out = out.replace(/`([^`\r\n]+)`/g, function (_, c) {
+        code.push(c);
+        return "@@CODE" + (code.length - 1) + "@@";
+      });
+
+      // 3. Bold, but never across a line break, and never when the asterisks
+      //    belong to a path: `a/**` cannot open one, `**/b` cannot close one.
+      out = out.replace(
+        /(^|[^\/\w*])\*\*(?!\s)([^*\r\n]+?)(?<!\s)\*\*(?![\/\w*])/g,
+        "$1<strong>$2</strong>"
+      );
+
+      // 4. Structure. A wall of prose is unreadable in a multi-agent log, so
+      //    honour the line breaks the sender actually wrote, and turn dashes
+      //    into a real list.
+      var lines = out.split(/\r?\n/);
+      var html = [];
+      var inList = false;
+      for (var i = 0; i < lines.length; i++) {
+        var item = lines[i].match(/^\s*[-•]\s+(.*)$/);
+        if (item) {
+          if (!inList) { html.push("<ul>"); inList = true; }
+          html.push("<li>" + item[1] + "</li>");
+          continue;
+        }
+        if (inList) { html.push("</ul>"); inList = false; }
+        if (lines[i].trim() === "") html.push('<span class="msg-gap"></span>');
+        else html.push(lines[i] + "<br>");
+      }
+      if (inList) html.push("</ul>");
+      out = html.join("");
+
+      // 5. Put the code back, now safe from step 3.
+      return out.replace(/@@CODE(\d+)@@/g, function (_, n) {
+        return '<span class="pill-gray">' + code[Number(n)] + "</span>";
+      });
     }
 
     function addChip(tag) {
