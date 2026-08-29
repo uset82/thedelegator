@@ -15,15 +15,17 @@
     ]
   },
   "agents": {
-    "cursor": {
-      "role": "builder",
-      "branch": "feat/cursor",
+    "antigravity": {
+      "role": "architect",
+      "branch": "feat/antigravity",
       "owns": [
-        "src/cursor/**"
+        "lib/**",
+        "templates/**",
+        "app/**"
       ],
-      "title": "cursor Agent",
-      "color": "blue",
-      "icon": "💻"
+      "title": "Antigravity IDE",
+      "color": "purple",
+      "icon": "🔮"
     }
   },
   "everyoneMayWrite": [
